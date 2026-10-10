@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>INP Radar</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="status" id="status" data-state="connecting">
+      <span class="status-dot"></span>
+      <span class="status-text" id="status-text">Connecting…</span>
+      <button id="reload" type="button" hidden>Reload page</button>
+    </header>
+
+    <main>
+      <section class="feature">
+        <div class="feature-box metric" id="inp-box">
+          <label class="metric-title">
+            INP
+            <em>(since page load)</em>
+          </label>
+          <span class="metric-value"
+            ><span id="inp-value">–</span><small>ms</small></span
+          >
+          <div class="breakdown" id="breakdown" hidden>
+            <div class="breakdown-bar">
+              <span class="input-delay" id="bar-input-delay"></span>
+              <span class="processing" id="bar-processing"></span>
+              <span class="presentation" id="bar-presentation"></span>
+            </div>
+            <dl>
+              <dt class="input-delay">Input delay</dt>
+              <dd id="inp-input-delay"></dd>
+              <dt class="processing">Processing</dt>
+              <dd id="inp-processing"></dd>
+              <dt class="presentation">Presentation</dt>
+              <dd id="inp-presentation"></dd>
+            </dl>
+            <code class="target" id="inp-target"></code>
+          </div>
+        </div>
+
+        <div class="feature-box frame-meter">
+          <div id="clock" class="clock">
+            <div class="clock-hand"></div>
+          </div>
+          <span class="frame-meter-label" id="clock-label">Main thread</span>
+        </div>
+      </section>
+
+      <section class="log">
+        <h2>Event log <em>(newest first, ≥ 16 ms)</em></h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Event</th>
+                <th class="value">Duration</th>
+                <th class="value">Time</th>
+              </tr>
+            </thead>
+            <tbody id="event-log"></tbody>
+          </table>
+          <p class="empty">Interact with the page to see events.</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
