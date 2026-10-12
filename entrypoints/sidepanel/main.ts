@@ -1,5 +1,7 @@
 import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/utils/protocol';
 import { createEventLog } from './event-log';
+import type { Meter } from './meter';
+import { createPulse } from './pulse';
 import { createRadar } from './radar';
 
 const MAX_RETRIES = 10;
@@ -9,7 +11,10 @@ function $<T extends HTMLElement>(id: string) {
   return document.getElementById(id) as T;
 }
 
-const radar = createRadar($('clock'));
+const meters: Meter[] = [
+  createRadar($('clock')),
+  createPulse($<HTMLCanvasElement>('pulse'), $('pulse-readout')),
+];
 const log = createEventLog($<HTMLTableSectionElement>('event-log'));
 
 // --- Rendering -------------------------------------------------------------
@@ -23,7 +28,7 @@ function setStatus(state: State, text: string) {
   $('reload').hidden = state !== 'unreachable';
   $('clock-label').textContent =
     state === 'hidden' ? 'Paused (tab hidden)' : 'Main thread';
-  radar.setActive(state === 'connected');
+  for (const meter of meters) meter.setActive(state === 'connected');
 }
 
 function renderInp(inp: InpSnapshot | null) {
@@ -69,7 +74,7 @@ function handle(message: PageMessage) {
       setStatus(message.visible ? 'connected' : 'hidden', pageUrl);
       break;
     case 'beat':
-      radar.beat();
+      for (const meter of meters) meter.beat();
       break;
     case 'visibility':
       setStatus(message.visible ? 'connected' : 'hidden', pageUrl);

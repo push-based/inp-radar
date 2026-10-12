@@ -9,16 +9,9 @@
  * coloured wedge measures how long it's been since the page's last heartbeat.
  */
 
-const SPEED = 3000; // Milliseconds per one full revolution.
+import { SPEED, lagColor, lagDegrees, type Meter } from './meter';
 
-export interface Radar {
-  /** Call whenever a heartbeat arrives from the page. */
-  beat(): void;
-  /** Inactive = greyed out, no wedge (page hidden or not connected). */
-  setActive(active: boolean): void;
-}
-
-export function createRadar(clock: HTMLElement): Radar {
+export function createRadar(clock: HTMLElement): Meter {
   let active = false;
   let lastFrame = performance.now();
   let lastBeat = lastFrame;
@@ -39,10 +32,9 @@ export function createRadar(clock: HTMLElement): Radar {
         Math.max(now - SPEED, lagStart + elapsed * 2),
       );
 
-      const offset = Math.max(10, 360 * ((now - lagStart) / SPEED));
+      const lag = now - lagStart;
       clock.style.background = `conic-gradient(var(--clock-face),
-        var(--clock-face) ${360 - offset}deg,
-        hsl(${Math.max(0, 120 - offset)}deg, 100%, 50%))`;
+        var(--clock-face) ${360 - lagDegrees(lag)}deg, ${lagColor(lag)})`;
     }
 
     requestAnimationFrame(draw);

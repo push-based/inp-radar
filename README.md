@@ -1,8 +1,8 @@
 # INP Radar
 
-A Chrome extension that shows a live INP value, a main-thread "radar" and an
-event log for the current tab, in a side panel that stays open while you
-interact with the page. Inspired by Phil Walton's
+A Chrome extension that shows a live INP value, a main-thread "radar", an
+ECG-style heartbeat trace and an event log for the current tab, in a side panel
+that stays open while you interact with the page. Inspired by Phil Walton's
 [INP demo](https://chrome.dev/inp-demo/)
 ([source](https://github.com/GoogleChromeLabs/web-perf-demos/tree/main/inp-demo)).
 
@@ -27,7 +27,7 @@ open the side panel.
 ┌──────────── page tab ─────────────┐        ┌──── side panel ────┐
 │ content script (page main thread) │  port  │ sidepanel/         │
 │  • PerformanceObserver('event')   │ ─────▶ │  • INP + breakdown │
-│  • onINP (web-vitals/attribution) │        │  • radar           │
+│  • onINP (web-vitals/attribution) │        │  • radar + pulse   │
 │  • rAF heartbeat                  │        │  • event log       │
 └───────────────────────────────────┘        └────────────────────┘
 ```
@@ -47,6 +47,15 @@ so it would never freeze. Instead, the content script sends a heartbeat on every
 page animation frame. The panel spins the sweep on its own clock and draws the
 wedge as the time since the last heartbeat. When the page is blocked the wedge
 grows and turns red, then catches up once frames resume.
+
+### The heartbeat trace
+
+`sidepanel/pulse.ts` draws the same signal as an ECG-style strip on a canvas,
+sweeping left to right in sync with the radar. Each column plots the time since
+the page's last frame on a square-root scale, with reference lines at 50, 200
+and 500 ms. A healthy page draws a flat green line. A block draws a spike that
+climbs for as long as it lasts and drops when frames resume, so you can compare
+several blocks side by side. The readout shows the peak in the current sweep.
 
 ## Limitations
 

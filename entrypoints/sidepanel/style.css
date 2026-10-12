@@ -267,6 +267,42 @@ dt.presentation {
   width: 0;
 }
 
+.pulse-box {
+  align-items: stretch;
+  grid-column: 1 / -1;
+  padding: 1em;
+}
+.pulse-screen {
+  background: var(--clock-face);
+  border-radius: 0.75em;
+  box-shadow: inset 0 0 0 4px var(--clock-ring);
+  height: 7em;
+  padding: 4px;
+  transition: opacity 0.2s ease-in-out;
+}
+.pulse-screen:not(.active) {
+  opacity: 0.25;
+}
+.pulse-screen canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+.pulse-label {
+  color: var(--muted);
+  display: flex;
+  gap: 0.5em;
+  justify-content: space-between;
+  margin-top: 0.75em;
+}
+.pulse-label em {
+  font-size: 0.9em;
+}
+#pulse-readout {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* --- Event log ------------------------------------------------------------- */
 
 .log {
