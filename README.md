@@ -63,3 +63,8 @@ several blocks side by side. The readout shows the peak in the current sweep.
 - `chrome://` pages and the Chrome Web Store can't be measured.
 - Only the top frame is measured.
 - The event log only lists events of 16 ms or more (the Event Timing minimum).
+
+## License
+
+[Apache-2.0](LICENSE). The radar and side panel styles are adapted from
+Google's INP demo, also Apache-2.0. See [NOTICE](NOTICE).
