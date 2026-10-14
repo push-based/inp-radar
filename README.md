@@ -1,4 +1,9 @@
-# INP Radar
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/logo-dark.svg">
+    <img src="assets/logo/logo.svg" alt="INP Radar" height="56">
+  </picture>
+</h1>
 
 A Chrome extension that shows a live INP value, a main-thread "radar", an
 ECG-style heartbeat trace and an event log for the current tab, in a side panel
