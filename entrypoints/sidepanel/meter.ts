@@ -14,8 +14,3 @@ export interface Meter {
 export function lagDegrees(lag: number) {
   return Math.max(10, 360 * (lag / SPEED));
 }
-
-/** Green → red, using the same mapping as the radar wedge. */
-export function lagColor(lag: number) {
-  return `hsl(${Math.max(0, 120 - lagDegrees(lag))}deg, 100%, 50%)`;
-}

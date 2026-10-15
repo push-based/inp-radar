@@ -1,0 +1,164 @@
+/*
+ * PushBased design tokens, copied from the PushBased Design Guide
+ * (https://design-guide.push-based.io/foundations/tokens).
+ *
+ * Primitives only. Keep this file in sync with the guide and map the values
+ * to roles in style.css; DESIGN.md says how INP Radar uses each one.
+ */
+
+:root {
+  /* Primary */
+  --color-primary-25: #FBFAFF;
+  --color-primary-50: #F5F3FF;
+  --color-primary-100: #ECE9FE;
+  --color-primary-200: #DDD6FE;
+  --color-primary-300: #C3B5FD;
+  --color-primary-400: #A48AFB;
+  --color-primary-500: #875BF7;
+  --color-primary-600: #7839EE;
+  --color-primary-700: #6927DA;
+  --color-primary-800: #5720B7;
+  --color-primary-900: #491C96;
+  --color-primary-950: #2E125E;
+
+  /* Secondary */
+  --color-secondary-50: #FFF0F4;
+  --color-secondary-100: #FFDDE5;
+  --color-secondary-200: #FFC0CF;
+  --color-secondary-300: #FF94AD;
+  --color-secondary-400: #FF577F;
+  --color-secondary-500: #FF2357;
+  --color-secondary-600: #FF003C;
+  --color-secondary-700: #D70033;
+  --color-secondary-800: #B1032C;
+  --color-secondary-900: #920A2A;
+  --color-secondary-950: #500013;
+
+  /* Neutral */
+  --color-neutral-25: #FCFCFD;
+  --color-neutral-50: #F8FAFC;
+  --color-neutral-100: #EEF2F6;
+  --color-neutral-200: #E3E8EF;
+  --color-neutral-300: #CDD5DF;
+  --color-neutral-400: #9AA4B2;
+  --color-neutral-500: #697586;
+  --color-neutral-600: #4B5565;
+  --color-neutral-700: #364152;
+  --color-neutral-800: #202939;
+  --color-neutral-900: #121926;
+  --color-neutral-950: #0D121C;
+
+  /* Success */
+  --color-success-50: #F0FDF4;
+  --color-success-100: #DCFCE7;
+  --color-success-200: #BBF7D0;
+  --color-success-300: #86EFAC;
+  --color-success-400: #4ADE80;
+  --color-success-500: #22C55E;
+  --color-success-600: #16A34A;
+  --color-success-700: #15803D;
+  --color-success-800: #166534;
+  --color-success-900: #14532D;
+  --color-success-950: #052E16;
+
+  /* Warning */
+  --color-warning-50: #FFFBEB;
+  --color-warning-100: #FEF3C7;
+  --color-warning-200: #FDE68A;
+  --color-warning-300: #FCD34D;
+  --color-warning-400: #FBBF24;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-warning-700: #B45309;
+  --color-warning-800: #92400E;
+  --color-warning-900: #78350F;
+  --color-warning-950: #451A03;
+
+  /* Error */
+  --color-error-50: #FEF2F2;
+  --color-error-100: #FEE2E2;
+  --color-error-200: #FECACA;
+  --color-error-300: #FCA5A5;
+  --color-error-400: #F87171;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+  --color-error-700: #B91C1C;
+  --color-error-800: #991B1B;
+  --color-error-900: #7F1D1D;
+  --color-error-950: #450A0A;
+
+  /* Typography */
+  --font-family-sans: Geist, system-ui, -apple-system, sans-serif;
+  --font-family-mono: Geist Mono, ui-monospace, monospace;
+  --font-size-xs: 0.75rem;
+  --line-height-xs: 1rem;
+  --font-size-sm: 0.875rem;
+  --line-height-sm: 1.25rem;
+  --font-size-base: 1rem;
+  --line-height-base: 1.5rem;
+  --font-size-lg: 1.125rem;
+  --line-height-lg: 1.75rem;
+  --font-size-xl: 1.25rem;
+  --line-height-xl: 1.75rem;
+  --font-size-2xl: 1.5rem;
+  --line-height-2xl: 2rem;
+  --font-size-3xl: 1.875rem;
+  --line-height-3xl: 2.25rem;
+  --font-size-4xl: 2.25rem;
+  --line-height-4xl: 2.5rem;
+  --font-size-5xl: 3rem;
+  --line-height-5xl: 1;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --text-subtitle-font-family: Geist Mono, ui-monospace, monospace;
+  --text-subtitle-font-size: 0.875rem;
+  --text-subtitle-line-height: 1.25rem;
+  --text-subtitle-font-weight: 600;
+
+  /* Spacing */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-9: 2.25rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-28: 7rem;
+  --space-32: 8rem;
+  --space-36: 9rem;
+  --space-40: 10rem;
+  --space-44: 11rem;
+  --space-48: 12rem;
+  --space-52: 13rem;
+  --space-56: 14rem;
+  --space-60: 15rem;
+  --space-64: 16rem;
+  --space-72: 18rem;
+  --space-80: 20rem;
+  --space-96: 24rem;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius-base: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+}

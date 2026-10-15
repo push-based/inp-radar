@@ -5,7 +5,8 @@
  * that climbs for as long as the block lasts.
  */
 
-import { SPEED, lagColor, type Meter } from './meter';
+import { rate } from '@/utils/protocol';
+import { SPEED, type Meter } from './meter';
 
 const FRAME = 1000 / 60; // A lag of one frame or less sits on the baseline.
 const MAX_LAG = 1000; // Lags at or above this hit the top of the screen.
@@ -30,11 +31,20 @@ export function createPulse(
 
   function readColors() {
     const style = getComputedStyle(canvas);
+    const value = (name: string) => style.getPropertyValue(name).trim();
     return {
-      grid: style.getPropertyValue('--line'),
-      label: style.getPropertyValue('--muted'),
-      font: `10px ${style.fontFamily}`,
+      grid: value('--grid'),
+      label: value('--muted'),
+      font: `10px ${value('--font-mono')}`,
+      good: value('--good'),
+      'needs-improvement': value('--needs-improvement'),
+      poor: value('--poor'),
     };
+  }
+
+  // Coloured by the INP thresholds, like the radar wedge.
+  function lagColor(lag: number) {
+    return colors[rate(lag)];
   }
 
   function resize() {

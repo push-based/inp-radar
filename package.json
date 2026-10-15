@@ -4,6 +4,7 @@
   "license": "Apache-2.0",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "pnpm@10.34.7",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -22,6 +23,8 @@
     "wxt": "^0.21.3"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "web-vitals": "6.2.3"
   }
 }

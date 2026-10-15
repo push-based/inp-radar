@@ -9,7 +9,8 @@
  * coloured wedge measures how long it's been since the page's last heartbeat.
  */
 
-import { SPEED, lagColor, lagDegrees, type Meter } from './meter';
+import { rate } from '@/utils/protocol';
+import { SPEED, lagDegrees, type Meter } from './meter';
 
 export function createRadar(clock: HTMLElement): Meter {
   let active = false;
@@ -32,9 +33,10 @@ export function createRadar(clock: HTMLElement): Meter {
         Math.max(now - SPEED, lagStart + elapsed * 2),
       );
 
+      // Coloured by the INP thresholds, like the metric and the event log.
       const lag = now - lagStart;
       clock.style.background = `conic-gradient(var(--clock-face),
-        var(--clock-face) ${360 - lagDegrees(lag)}deg, ${lagColor(lag)})`;
+        var(--clock-face) ${360 - lagDegrees(lag)}deg, var(--${rate(lag)}))`;
     }
 
     requestAnimationFrame(draw);

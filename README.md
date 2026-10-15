@@ -51,7 +51,8 @@ freezes when the page is blocked. The side panel runs in a different process,
 so it would never freeze. Instead, the content script sends a heartbeat on every
 page animation frame. The panel spins the sweep on its own clock and draws the
 wedge as the time since the last heartbeat. When the page is blocked the wedge
-grows and turns red, then catches up once frames resume.
+grows, turning amber past 200 ms and red past 500 ms (the INP thresholds), then
+catches up once frames resume.
 
 ### The heartbeat trace
 

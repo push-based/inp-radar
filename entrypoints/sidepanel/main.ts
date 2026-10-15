@@ -1,3 +1,5 @@
+import '@fontsource-variable/geist/wght.css';
+import '@fontsource-variable/geist-mono/wght.css';
 import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/utils/protocol';
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
