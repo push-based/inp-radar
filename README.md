@@ -20,8 +20,12 @@ pnpm install
 pnpm dev        # launches Chrome with the extension loaded, hot reloading
 pnpm build      # production build in .output/chrome-mv3
 pnpm compile    # type-check
+pnpm test       # unit tests (Vitest); `pnpm test:watch` to re-run on change
 pnpm e2e        # build, then run the Playwright end-to-end tests
 ```
+
+Unit tests sit next to the code as `*.test.ts` and run in jsdom with WXT's
+Vitest plugin, which provides the `@/` aliases and a fake `browser` API.
 
 The end-to-end tests in `e2e/` load the built extension into Playwright's
 Chromium (run `pnpm exec playwright install chromium` once). The side panel
