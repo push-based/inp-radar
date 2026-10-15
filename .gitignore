@@ -24,3 +24,7 @@ web-ext.config.ts
 *.njsproj
 *.sln
 *.sw?
+
+# Local AI tooling (Claude Code, Impeccable): per-developer, not part of the project
+.claude/
+.impeccable/
