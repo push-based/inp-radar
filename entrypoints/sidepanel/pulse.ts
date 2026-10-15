@@ -59,7 +59,10 @@ export function createPulse(
 
   // Square-root scale: single dropped frames are visible, long blocks still fit.
   function y(lag: number) {
-    const v = Math.min(1, Math.sqrt(Math.max(0, lag - FRAME) / (MAX_LAG - FRAME)));
+    const v = Math.min(
+      1,
+      Math.sqrt(Math.max(0, lag - FRAME) / (MAX_LAG - FRAME)),
+    );
 
     return PADDING + (1 - v) * (height - PADDING * 2);
   }
@@ -78,7 +81,7 @@ export function createPulse(
     if (cursor < 0) {
       samples[next] = lag;
     } else {
-      for (let i = cursor; i !== next; ) {
+      for (let i = cursor; i !== next;) {
         i = (i + 1) % n;
         samples[i] = lag;
       }

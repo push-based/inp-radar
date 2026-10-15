@@ -1,5 +1,9 @@
 import './fonts.css';
-import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/utils/protocol';
+import {
+  PORT_NAME,
+  type InpSnapshot,
+  type PageMessage,
+} from '@/utils/protocol';
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
 import { createPulse } from './pulse';

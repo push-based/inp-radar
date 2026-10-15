@@ -1,10 +1,9 @@
 {
   "name": "inp-radar",
+  "version": "0.1.0",
+  "private": true,
   "description": "Chrome extension showing live INP, a main-thread radar and an event log in a side panel",
   "license": "Apache-2.0",
-  "private": true,
-  "version": "0.1.0",
-  "packageManager": "pnpm@10.34.7",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -15,22 +14,26 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "lint": "oxlint"
-  },
-  "devDependencies": {
-    "@oxlint/plugins": "1.88.0",
-    "oxlint": "1.88.0",
-    "typescript": "^5.9.3",
-    "vite": "^8.1.5",
-    "web-ext": "^10.5.0",
-    "wxt": "^0.21.3"
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "web-vitals": "6.2.3"
   },
+  "devDependencies": {
+    "@oxlint/plugins": "1.88.0",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "web-ext": "^10.5.0",
+    "wxt": "^0.21.3"
+  },
   "engines": {
     "node": ">=22.18"
-  }
+  },
+  "packageManager": "pnpm@10.34.7"
 }
