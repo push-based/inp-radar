@@ -5,7 +5,7 @@
  * that climbs for as long as the block lasts.
  */
 
-import { rate } from '@/utils/protocol';
+import { rate } from '@/shared/protocol';
 
 import { SPEED, type Meter } from './meter';
 

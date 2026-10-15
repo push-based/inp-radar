@@ -6,5 +6,5 @@ GoogleChromeLabs/web-perf-demos
 (https://github.com/GoogleChromeLabs/web-perf-demos/tree/main/inp-demo),
 Copyright 2022 Google LLC, licensed under the Apache License, Version 2.0.
 The adapted parts are the side panel layout and radar styles
-(entrypoints/sidepanel/style.css) and the radar frame meter
-(entrypoints/sidepanel/radar.ts).
+(src/entrypoints/sidepanel/style.css) and the radar frame meter
+(src/entrypoints/sidepanel/radar.ts).

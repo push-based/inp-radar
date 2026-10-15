@@ -1,7 +1,7 @@
 <h1>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/logo-dark.svg">
-    <img src="assets/logo/logo.svg" alt="INP Radar" height="56">
+    <source media="(prefers-color-scheme: dark)" srcset="design/logo/logo-dark.svg">
+    <img src="design/logo/logo.svg" alt="INP Radar" height="56">
   </picture>
 </h1>
 
@@ -37,12 +37,12 @@ open the side panel.
 └───────────────────────────────────┘        └────────────────────┘
 ```
 
-- `entrypoints/content.ts` measures inside the page. It buffers INP and event
-  entries so a panel opened late still shows history, and only runs the
+- `src/entrypoints/content.ts` measures inside the page. It buffers INP and
+  event entries so a panel opened late still shows history, and only runs the
   heartbeat while a panel is connected.
-- `entrypoints/sidepanel/` connects to the active tab with `tabs.connect`,
+- `src/entrypoints/sidepanel/` connects to the active tab with `tabs.connect`,
   follows tab switches and navigations, and renders.
-- `utils/protocol.ts` defines the messages between the two.
+- `src/shared/protocol.ts` defines the messages between the two.
 
 ### The radar
 

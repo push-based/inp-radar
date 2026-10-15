@@ -232,17 +232,17 @@ Sticky header in Label type (Muted Slate, 500) over a hairline rule. Rows altern
 
 The mark is a radar scope centered on a click. A Paper pointer clicks the exact center of a Bench Ink screen, and the scope's sweep line and primary-400 afterglow turn around that point. Behind them are Grid Line range rings and crosshairs, inside a Bezel Grey rim. It says what the tool does: every interaction is measured from where it happened. The violet is the brand voice, not a signal color, so the mark makes no claim about a page. The wordmark is "INP Radar" in Geist 600, outlined to paths, with the cap height centered on the scope.
 
-- `assets/logo/mark.svg` is the master mark. The same mark works on light and dark backgrounds: the dark screen stands out on light ones, and the grey rim outlines it on dark ones.
-- `assets/logo/mark-32.svg` (one ring plus crosshairs) and `mark-16.svg` (no grid) are simplified for the toolbar. Their pointer is larger and moves up and left so it stays inside the rim.
-- `assets/logo/logo.svg` and `logo-dark.svg` are the lockups for the README and other docs. Only the wordmark color changes.
+- `design/logo/mark.svg` is the master mark. The same mark works on light and dark backgrounds: the dark screen stands out on light ones, and the grey rim outlines it on dark ones.
+- `design/logo/mark-32.svg` (one ring plus crosshairs) and `mark-16.svg` (no grid) are simplified for the toolbar. Their pointer is larger and moves up and left so it stays inside the rim.
+- `design/logo/logo.svg` and `logo-dark.svg` are the lockups for the README and other docs. Only the wordmark color changes.
 - `public/icon/*.png` are rendered from these SVGs. The 16 and 32 px icons fill their box; 48 px and up are inset. The 128 px icon draws a 104 px scope, which optically matches the Web Store's 96 px square artwork inside 16 px of padding.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** take every color, size, space and radius from `entrypoints/sidepanel/tokens.css` (PushBased primitives), through the role variables in `style.css`.
-- **Do** color performance values only with the signal colors, using `rate()` from `utils/protocol.ts`, so the metric, radar, trace and log always agree.
+- **Do** take every color, size, space and radius from `src/entrypoints/sidepanel/tokens.css` (PushBased primitives), through the role variables in `style.css`.
+- **Do** color performance values only with the signal colors, using `rate()` from `src/shared/protocol.ts`, so the metric, radar, trace and log always agree.
 - **Do** set measured numbers in Geist Mono with tabular figures.
 - **Do** check both themes. Text holds 4.5:1 and large readouts hold 3:1 (WCAG AA).
 - **Do** keep the panel cheap: CSS-variable changes and a single canvas, no layout thrash in the per-frame loops.

@@ -1,4 +1,4 @@
-import { rate, type EventRecord } from '@/utils/protocol';
+import { rate, type EventRecord } from '@/shared/protocol';
 
 const MAX_ROWS = 200;
 

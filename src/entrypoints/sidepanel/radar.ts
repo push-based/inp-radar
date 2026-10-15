@@ -9,7 +9,7 @@
  * coloured wedge measures how long it's been since the page's last heartbeat.
  */
 
-import { rate } from '@/utils/protocol';
+import { rate } from '@/shared/protocol';
 
 import { SPEED, lagDegrees, type Meter } from './meter';
 

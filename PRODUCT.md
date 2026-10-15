@@ -36,7 +36,7 @@ The panel renders in a separate process from the page, so it keeps animating whi
 
 ## Capabilities and Constraints
 
-- Built with WXT and vanilla TypeScript, with no UI framework. Entry points: `entrypoints/content.ts` (measures in the page) and `entrypoints/sidepanel/` (renders). The message protocol is in `utils/protocol.ts`.
+- Built with WXT and vanilla TypeScript, with no UI framework. Entry points: `src/entrypoints/content.ts` (measures in the page) and `src/entrypoints/sidepanel/` (renders). The message protocol is in `src/shared/protocol.ts`.
 - Metrics come from `web-vitals` (attribution build) and `PerformanceObserver('event')`. Thresholds follow Core Web Vitals: good ≤ 200 ms, needs improvement ≤ 500 ms, poor above that.
 - The side panel must stay cheap to render, because it's measuring someone else's main thread. The heartbeat only runs while a panel is connected.
 - Licensed Apache-2.0. Radar and panel styles are adapted from Google's INP demo (see `NOTICE`).

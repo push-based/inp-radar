@@ -1,6 +1,6 @@
 import { onINP } from 'web-vitals/attribution';
 
-import { PORT_NAME, type EventRecord, type InpSnapshot, type PageMessage } from '@/utils/protocol';
+import { PORT_NAME, type EventRecord, type InpSnapshot, type PageMessage } from '@/shared/protocol';
 
 const MAX_BUFFERED_EVENTS = 200;
 
