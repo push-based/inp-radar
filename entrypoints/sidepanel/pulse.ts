@@ -6,6 +6,7 @@
  */
 
 import { rate } from '@/utils/protocol';
+
 import { SPEED, type Meter } from './meter';
 
 const FRAME = 1000 / 60; // A lag of one frame or less sits on the baseline.
@@ -14,10 +15,7 @@ const GRID = [50, 200, 500]; // Reference lines, in ms.
 const GAP = 12; // Blank columns ahead of the cursor, like a monitor's erase bar.
 const PADDING = 6;
 
-export function createPulse(
-  canvas: HTMLCanvasElement,
-  readout: HTMLElement,
-): Meter {
+export function createPulse(canvas: HTMLCanvasElement, readout: HTMLElement): Meter {
   const ctx = canvas.getContext('2d')!;
   let width = 0;
   let height = 0;
@@ -59,10 +57,7 @@ export function createPulse(
 
   // Square-root scale: single dropped frames are visible, long blocks still fit.
   function y(lag: number) {
-    const v = Math.min(
-      1,
-      Math.sqrt(Math.max(0, lag - FRAME) / (MAX_LAG - FRAME)),
-    );
+    const v = Math.min(1, Math.sqrt(Math.max(0, lag - FRAME) / (MAX_LAG - FRAME)));
 
     return PADDING + (1 - v) * (height - PADDING * 2);
   }

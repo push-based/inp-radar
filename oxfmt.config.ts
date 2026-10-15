@@ -1,8 +1,8 @@
 import { defineConfig } from 'oxfmt';
 
 export default defineConfig({
-  printWidth: 80,
   singleQuote: true,
+  sortImports: true,
   ignorePatterns: [
     '.agent/**',
     '.agents/**',
@@ -22,7 +22,7 @@ export default defineConfig({
     'tools/oxlint/anti-slop/**',
   ],
   overrides: [
-    // Keep the double-quoted YAML front matter in DESIGN.md as written.
+    // DESIGN.md is generated with double-quoted YAML front matter.
     { files: ['*.md'], options: { singleQuote: false } },
   ],
 });

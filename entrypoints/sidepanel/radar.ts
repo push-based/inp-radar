@@ -10,6 +10,7 @@
  */
 
 import { rate } from '@/utils/protocol';
+
 import { SPEED, lagDegrees, type Meter } from './meter';
 
 export function createRadar(clock: HTMLElement): Meter {
@@ -28,10 +29,7 @@ export function createRadar(clock: HTMLElement): Meter {
     if (active) {
       // Play catch up at double speed once the page is responsive again, but
       // never past the last proof of life, and never more than 1 turn behind.
-      lagStart = Math.min(
-        lastBeat,
-        Math.max(now - SPEED, lagStart + elapsed * 2),
-      );
+      lagStart = Math.min(lastBeat, Math.max(now - SPEED, lagStart + elapsed * 2));
 
       // Coloured by the INP thresholds, like the metric and the event log.
       const lag = now - lagStart;

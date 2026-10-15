@@ -1,10 +1,6 @@
 import { onINP } from 'web-vitals/attribution';
-import {
-  PORT_NAME,
-  type EventRecord,
-  type InpSnapshot,
-  type PageMessage,
-} from '@/utils/protocol';
+
+import { PORT_NAME, type EventRecord, type InpSnapshot, type PageMessage } from '@/utils/protocol';
 
 const MAX_BUFFERED_EVENTS = 200;
 
@@ -65,10 +61,7 @@ export default defineContentScript({
           inputDelay: entry.processingStart - entry.startTime,
           processingDuration: entry.processingEnd - entry.processingStart,
           // `duration` is rounded to 8ms, so this can dip below zero.
-          presentationDelay: Math.max(
-            0,
-            entry.startTime + entry.duration - entry.processingEnd,
-          ),
+          presentationDelay: Math.max(0, entry.startTime + entry.duration - entry.processingEnd),
           timestamp: performance.timeOrigin + entry.startTime,
         };
 

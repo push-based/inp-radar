@@ -1,9 +1,6 @@
 import './fonts.css';
-import {
-  PORT_NAME,
-  type InpSnapshot,
-  type PageMessage,
-} from '@/utils/protocol';
+import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/utils/protocol';
+
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
 import { createPulse } from './pulse';
@@ -40,8 +37,7 @@ function setStatus(state: State, text: string) {
   $('status-text').textContent = text;
   $('status-text').title = text;
   $('reload').hidden = state !== 'unreachable';
-  $('clock-label').textContent =
-    state === 'hidden' ? 'Paused (tab hidden)' : 'Main thread';
+  $('clock-label').textContent = state === 'hidden' ? 'Paused (tab hidden)' : 'Main thread';
 
   for (const meter of meters) meter.setActive(state === 'connected');
 }
