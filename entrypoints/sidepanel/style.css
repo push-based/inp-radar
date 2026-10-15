@@ -15,9 +15,11 @@
 :root {
   color-scheme: light dark;
 
-  /* Fontsource registers the self-hosted faces as "Geist Variable". */
+  /* fonts.css registers the self-hosted faces as "Geist Variable" and
+     "Geist Mono Variable"; the token stacks name the plain families. */
   --font-sans: 'Geist Variable', var(--font-family-sans);
   --font-mono: 'Geist Mono Variable', var(--font-family-mono);
+  --font-title: 'Geist Mono Variable', var(--text-subtitle-font-family);
 
   --bg: var(--color-neutral-25);
   --fg: var(--color-neutral-900);
@@ -31,7 +33,7 @@
 
   --accent: var(--color-primary-600);
   --accent-hover: var(--color-primary-700);
-  --accent-fg: #fff;
+  --accent-fg: var(--color-neutral-25);
   --focus: var(--color-primary-500);
   --selection: var(--color-primary-100);
 
@@ -45,6 +47,7 @@
   --presentation: var(--color-primary-800);
 
   --logo-base: var(--color-primary-950);
+  --logo-accent: var(--color-secondary-600);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -114,9 +117,11 @@ code {
   font-size: var(--font-size-xs);
 }
 
-/* Qualifiers like "(since page load)": quieter, never synthetic italics. */
+/* Qualifiers like "(since page load)": quieter, never synthetic italics.
+   Always body type, even inside a mono title. */
 em {
   color: var(--muted);
+  font-family: var(--font-sans);
   font-style: normal;
   font-weight: var(--font-weight-regular);
 }
@@ -124,7 +129,7 @@ em {
 /* Channel titles use the brand subtitle style. */
 .metric-title,
 h2 {
-  font-family: var(--text-subtitle-font-family);
+  font-family: var(--font-title);
   font-size: var(--text-subtitle-font-size);
   font-weight: var(--text-subtitle-font-weight);
   line-height: var(--text-subtitle-line-height);
@@ -223,7 +228,6 @@ main {
 }
 .metric-title > em {
   display: block;
-  font-family: var(--font-sans);
   font-size: var(--font-size-xs);
   line-height: var(--line-height-xs);
 }
@@ -399,7 +403,6 @@ h2 {
   margin: 0 0 var(--space-2);
 }
 h2 > em {
-  font-family: var(--font-sans);
   font-size: var(--font-size-xs);
 }
 
@@ -506,7 +509,7 @@ tbody tr[data-rating='poor'] .duration {
   fill: var(--logo-base);
 }
 .credit-logo-accent {
-  fill: var(--color-secondary-600);
+  fill: var(--logo-accent);
 }
 .credit-name {
   font-weight: var(--font-weight-medium);

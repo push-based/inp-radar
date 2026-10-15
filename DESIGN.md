@@ -4,7 +4,7 @@ description: A bench instrument for main-thread responsiveness, built on the Pus
 colors:
   primary: "#7839EE"
   primary-hover: "#6927DA"
-  on-primary: "#FFFFFF"
+  on-primary: "#FCFCFD"
   focus: "#875BF7"
   selection: "#ECE9FE"
   background: "#FCFCFD"
@@ -156,8 +156,8 @@ A cool slate neutral chassis with one violet voice and three signal colors that 
 
 ## Typography
 
-**Body Font:** Geist (self-hosted via `@fontsource-variable/geist`, then system-ui)
-**Data Font:** Geist Mono (self-hosted via `@fontsource-variable/geist-mono`, then ui-monospace)
+**Body Font:** Geist (self-hosted from `@fontsource-variable/geist`, Latin subset only, then system-ui)
+**Data Font:** Geist Mono (self-hosted from `@fontsource-variable/geist-mono`, Latin subset only, then ui-monospace)
 
 **Character:** Geist is a neutral neo-grotesque that keeps the chrome quiet. Geist Mono gives every measurement fixed-width digits, so values line up and changing numbers don't jitter.
 
@@ -196,7 +196,7 @@ Soft but precise. Panels use `rounded.xl` (12 px), instrument screens `rounded.l
 ### Buttons
 
 - **Shape:** gently rounded (`rounded.md`, 6 px).
-- **Primary:** PushBased Violet fill, white text in Geist 500 at body size, 0.25rem × 0.75rem padding. Dark mode uses light violet with Bench Ink text.
+- **Primary:** PushBased Violet fill, Paper text in Geist 500 at body size, 0.25rem × 0.75rem padding. Dark mode uses light violet with Bench Ink text.
 - **Hover / Focus:** fill steps one shade deeper (lighter in dark mode) over 150 ms ease-out; a 2 px violet focus ring at 2 px offset.
 - There's only one button today (reload an unreachable page). Keep it the only filled control in view.
 
