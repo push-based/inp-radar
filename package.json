@@ -15,7 +15,7 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "lint": "node --experimental-strip-types --disable-warning=ExperimentalWarning node_modules/oxlint/bin/oxlint"
+    "lint": "oxlint"
   },
   "devDependencies": {
     "@oxlint/plugins": "1.88.0",
@@ -29,5 +29,8 @@
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "web-vitals": "6.2.3"
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

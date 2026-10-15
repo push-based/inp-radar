@@ -9,4 +9,5 @@
 ## Local deviations
 
 - `shared/dictionary-types.ts`: `unsafeMembers[0]` → `(unsafeMembers[0] ?? null)` in `unsafeDirectValue` so the file typechecks under this repo's `noUncheckedIndexedAccess`. The preceding `length > 0` guard makes it behavior-neutral.
-- Config lives in `.oxlintrc.json` instead of `oxlint.config.ts`, and `pnpm lint` runs Oxlint under `node --experimental-strip-types`, because local Node (22.17) predates unflagged TypeScript loading (22.18). Both can be reverted once Node ≥ 22.18 is required.
+
+Oxlint loads the plugin and `oxlint.config.ts` as TypeScript, which needs Node ≥ 22.18 (`engines` in `package.json`; `.nvmrc` pins 26).
