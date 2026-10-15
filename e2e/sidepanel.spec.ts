@@ -63,12 +63,14 @@ test('the heartbeat shows how long the page was blocked', async ({ page, openPan
   await expect(panel.locator('#clock')).toContainClass('active');
   await expect(readout).toHaveText(/^peak \d+ ms$/);
 
-  await page.click('#very-slow');
+  await page.click('#frozen');
 
-  // The readout is the peak lag in the current 3 s sweep.
+  // The readout is the peak lag in the current 3 s sweep. The panel samples
+  // it on its own frames, which can be several hundred ms apart when the
+  // machine is busy, so the block is long and the bar is well below it.
   await expect
     .poll(async () => Number((await readout.textContent())?.match(/\d+/)?.[0]))
-    .toBeGreaterThanOrEqual(600);
+    .toBeGreaterThanOrEqual(1000);
 
   // Once beats resume the radar wedge catches up and turns green again.
   // Without beats the lag would only keep growing.

@@ -18,6 +18,7 @@ const PAGE = `<!doctype html>
   <body>
     <button id="slow" data-block="300">Slow</button>
     <button id="very-slow" data-block="600">Very slow</button>
+    <button id="frozen" data-block="1500">Frozen</button>
     <script>
       for (const button of document.querySelectorAll('[data-block]')) {
         button.addEventListener('click', () => {
