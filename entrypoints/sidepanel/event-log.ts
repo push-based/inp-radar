@@ -19,7 +19,9 @@ export function createEventLog(tbody: HTMLTableSectionElement): EventLog {
   function cell(text: string, className?: string) {
     const td = document.createElement('td');
     td.textContent = text;
+
     if (className) td.className = className;
+
     return td;
   }
 
@@ -42,6 +44,7 @@ export function createEventLog(tbody: HTMLTableSectionElement): EventLog {
     );
 
     tbody.prepend(tr);
+
     while (tbody.rows.length > MAX_ROWS) tbody.lastElementChild?.remove();
   }
 

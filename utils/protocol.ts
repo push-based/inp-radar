@@ -50,6 +50,8 @@ export type PageMessage =
 
 export function rate(value: number): Rating {
   if (value <= 200) return 'good';
+
   if (value <= 500) return 'needs-improvement';
+
   return 'poor';
 }

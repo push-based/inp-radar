@@ -31,11 +31,13 @@ export default defineContentScript({
       send({ type: 'beat' });
       heartbeat = requestAnimationFrame(beat);
     }
+
     function startHeartbeat() {
       if (!heartbeat && port && visible()) {
         heartbeat = requestAnimationFrame(beat);
       }
     }
+
     function stopHeartbeat() {
       cancelAnimationFrame(heartbeat);
       heartbeat = 0;
@@ -43,10 +45,13 @@ export default defineContentScript({
 
     // --- Event log -----------------------------------------------------------
     new PerformanceObserver((list) => {
+      // SAFETY: this observer subscribes only to `type: 'event'` (below), and
+      // every 'event' entry is a PerformanceEventTiming.
       for (const entry of list.getEntries() as PerformanceEventTiming[]) {
         if (!entry.interactionId) continue;
 
         let interaction = interactionNumbers.get(entry.interactionId);
+
         if (interaction === undefined) {
           interaction = interactionNumbers.size + 1;
           interactionNumbers.set(entry.interactionId, interaction);
@@ -68,6 +73,7 @@ export default defineContentScript({
         };
 
         events.push(record);
+
         if (events.length > MAX_BUFFERED_EVENTS) events.shift();
         send({ type: 'event', event: record });
       }
@@ -93,6 +99,7 @@ export default defineContentScript({
     // --- Page lifecycle --------------------------------------------------------
     document.addEventListener('visibilitychange', () => {
       send({ type: 'visibility', visible: visible() });
+
       if (visible()) startHeartbeat();
       else stopHeartbeat();
     });

@@ -32,6 +32,7 @@ export function createPulse(
   function readColors() {
     const style = getComputedStyle(canvas);
     const value = (name: string) => style.getPropertyValue(name).trim();
+
     return {
       grid: value('--grid'),
       label: value('--muted'),
@@ -59,11 +60,13 @@ export function createPulse(
   // Square-root scale: single dropped frames are visible, long blocks still fit.
   function y(lag: number) {
     const v = Math.min(1, Math.sqrt(Math.max(0, lag - FRAME) / (MAX_LAG - FRAME)));
+
     return PADDING + (1 - v) * (height - PADDING * 2);
   }
 
   function inGap(column: number) {
     const ahead = (column - cursor + samples.length) % samples.length;
+
     return ahead > 0 && ahead <= GAP;
   }
 
@@ -80,6 +83,7 @@ export function createPulse(
         samples[i] = lag;
       }
     }
+
     cursor = next;
   }
 
@@ -93,6 +97,7 @@ export function createPulse(
     ctx.textBaseline = 'bottom';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
+
     for (const lag of GRID) {
       const lineY = Math.round(y(lag)) + 0.5;
       ctx.strokeStyle = colors.grid;
@@ -103,18 +108,22 @@ export function createPulse(
       ctx.fillStyle = colors.label;
       ctx.fillText(`${lag} ms`, width - PADDING, lineY - 1);
     }
+
     ctx.setLineDash([]);
 
     // The trace, one segment per column so each can take its own colour.
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+
     for (let i = 1; i < samples.length; i++) {
       const a = samples[i - 1] ?? NaN;
       const b = samples[i] ?? NaN;
+
       if (Number.isNaN(a) || Number.isNaN(b) || inGap(i) || inGap(i - 1)) {
         continue;
       }
+
       ctx.strokeStyle = lagColor(Math.max(a, b));
       ctx.beginPath();
       ctx.moveTo(i - 1, y(a));
@@ -124,6 +133,7 @@ export function createPulse(
 
     // The bright head of the trace.
     const head = samples[cursor];
+
     if (head !== undefined && !Number.isNaN(head)) {
       ctx.fillStyle = lagColor(head);
       ctx.beginPath();
@@ -134,8 +144,10 @@ export function createPulse(
 
   function updateReadout() {
     let peak = 0;
+
     for (const lag of samples) if (lag > peak) peak = lag;
     const text = active && peak > 0 ? `peak ${Math.round(peak)} ms` : '';
+
     if (text !== lastReadout) {
       readout.textContent = lastReadout = text;
     }
@@ -147,6 +159,7 @@ export function createPulse(
       draw();
       updateReadout();
     }
+
     requestAnimationFrame(frame);
   }
 

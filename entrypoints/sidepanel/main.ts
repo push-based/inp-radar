@@ -8,15 +8,24 @@ import { createRadar } from './radar';
 const MAX_RETRIES = 10;
 const RETRY_DELAY = 300;
 
-function $<T extends HTMLElement>(id: string) {
-  return document.getElementById(id) as T;
+function $(id: string): HTMLElement;
+function $<T extends HTMLElement>(id: string, type: new () => T): T;
+function $(id: string, type = HTMLElement) {
+  const element = document.getElementById(id);
+
+  if (!(element instanceof type)) {
+    throw new Error(`#${id} is missing or not a ${type.name}`);
+  }
+
+  return element;
 }
 
 const meters: Meter[] = [
   createRadar($('clock')),
-  createPulse($<HTMLCanvasElement>('pulse'), $('pulse-readout')),
+  createPulse($('pulse', HTMLCanvasElement), $('pulse-readout')),
 ];
-const log = createEventLog($<HTMLTableSectionElement>('event-log'));
+
+const log = createEventLog($('event-log', HTMLTableSectionElement));
 
 // --- Rendering -------------------------------------------------------------
 
@@ -29,6 +38,7 @@ function setStatus(state: State, text: string) {
   $('reload').hidden = state !== 'unreachable';
   $('clock-label').textContent =
     state === 'hidden' ? 'Paused (tab hidden)' : 'Main thread';
+
   for (const meter of meters) meter.setActive(state === 'connected');
 }
 
@@ -37,6 +47,7 @@ function renderInp(inp: InpSnapshot | null) {
   $('inp-value').textContent = inp ? String(Math.round(inp.value)) : '–';
   $('breakdown').hidden = !inp;
   $('inp-target').textContent = '';
+
   if (!inp) return;
 
   const parts = {
@@ -44,6 +55,7 @@ function renderInp(inp: InpSnapshot | null) {
     processing: inp.processingDuration,
     presentation: inp.presentationDelay,
   };
+
   for (const [key, value] of Object.entries(parts)) {
     $(`bar-${key}`).style.flexGrow = String(value);
     $(`inp-${key}`).textContent = `${Math.round(value)} ms`;
@@ -52,6 +64,7 @@ function renderInp(inp: InpSnapshot | null) {
   const target = inp.interactionTarget
     ? `${inp.interactionType ?? 'interaction'} → ${inp.interactionTarget}`
     : '';
+
   $('inp-target').textContent = target;
   $('inp-target').title = target;
 }
@@ -59,6 +72,7 @@ function renderInp(inp: InpSnapshot | null) {
 function describe(url: string) {
   try {
     const { host, pathname } = new URL(url);
+
     return host + pathname;
   } catch {
     return url;
@@ -115,6 +129,7 @@ function connect(id: number | undefined) {
   log.reset();
 
   tabId = id;
+
   if (id === undefined) return;
   setStatus('connecting', 'Connecting…');
 
@@ -122,12 +137,14 @@ function connect(id: number | undefined) {
   port = p;
   p.onMessage.addListener((message: PageMessage) => {
     if (port !== p) return;
+
     if (message.type === 'hello') connected = true;
     handle(message);
   });
   p.onDisconnect.addListener(() => {
     // Read lastError so Chrome doesn't log "Could not establish connection".
     void browser.runtime.lastError;
+
     if (port !== p) return;
     port = null;
     connected = false;
@@ -153,6 +170,7 @@ async function connectToActiveTab() {
     active: true,
     windowId: panelWindow.id,
   });
+
   retries = 0;
   connect(tab?.id);
 }

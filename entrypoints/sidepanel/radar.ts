@@ -41,6 +41,7 @@ export function createRadar(clock: HTMLElement): Meter {
 
     requestAnimationFrame(draw);
   }
+
   requestAnimationFrame(draw);
 
   return {
@@ -52,6 +53,7 @@ export function createRadar(clock: HTMLElement): Meter {
       active = next;
       lastBeat = lagStart = performance.now();
       clock.classList.toggle('active', active);
+
       if (!active) clock.style.removeProperty('background');
     },
   };
