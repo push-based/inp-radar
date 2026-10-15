@@ -20,7 +20,13 @@ pnpm install
 pnpm dev        # launches Chrome with the extension loaded, hot reloading
 pnpm build      # production build in .output/chrome-mv3
 pnpm compile    # type-check
+pnpm e2e        # build, then run the Playwright end-to-end tests
 ```
+
+The end-to-end tests in `e2e/` load the built extension into Playwright's
+Chromium (run `pnpm exec playwright install chromium` once). The side panel
+can't be opened from a test, so they load `sidepanel.html` in a tab and then
+switch to the test page, which the panel follows as it would the active tab.
 
 To load a build manually, open `chrome://extensions`, enable Developer mode,
 click **Load unpacked** and pick `.output/chrome-mv3`. Click the toolbar icon to

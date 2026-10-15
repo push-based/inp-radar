@@ -13,6 +13,8 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "e2e": "wxt build && playwright test",
+    "e2e:ui": "wxt build && playwright test --ui",
     "postinstall": "wxt prepare",
     "lint": "oxlint",
     "format": "oxfmt",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@oxlint/plugins": "1.88.0",
+    "@playwright/test": "^1.64.1",
     "oxfmt": "0.73.0",
     "oxlint": "1.88.0",
     "typescript": "^5.9.3",

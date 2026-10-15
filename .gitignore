@@ -28,3 +28,7 @@ web-ext.config.ts
 # Local AI tooling (Claude Code, Impeccable): per-developer, not part of the project
 .claude/
 .impeccable/
+
+# Playwright
+test-results
+playwright-report
