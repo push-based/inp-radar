@@ -30,6 +30,7 @@
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "demo": "vite demo",
+    "store-images": "wxt build && node tools/store/capture.ts",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
