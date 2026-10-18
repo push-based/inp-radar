@@ -5,6 +5,8 @@
   </picture>
 </h1>
 
+[![CI](https://github.com/push-based/inp-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/push-based/inp-radar/actions/workflows/ci.yml)
+
 A Chrome extension that shows a live INP value, a main-thread "radar", an
 ECG-style heartbeat trace and an event log for the current tab, in a side panel
 that stays open while you interact with the page. Inspired by Phil Walton's
