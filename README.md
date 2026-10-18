@@ -22,7 +22,14 @@ pnpm build      # production build in .output/chrome-mv3
 pnpm compile    # type-check
 pnpm test       # unit tests (Vitest); `pnpm test:watch` to re-run on change
 pnpm e2e        # build, then run the Playwright end-to-end tests
+pnpm demo       # serve the demo page at http://localhost:5173
 ```
+
+`demo/index.html` is a static, dependency-free page that reproduces the two
+causes of bad INP: a recurring timer that blocks the main thread with a long
+task every few seconds, and a click handler that does heavy work. A cheap
+button shows the input delay a click picks up when it lands during a block.
+Open it with the extension loaded and open the side panel on its tab.
 
 Unit tests sit next to the code as `*.test.ts` and run in jsdom with WXT's
 Vitest plugin, which provides the `@/` aliases and a fake `browser` API.
