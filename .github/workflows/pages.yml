@@ -21,11 +21,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/configure-pages@v6
       # The site is the README, rendered by Jekyll, plus the static demo page
-      # at /demo/. The logo goes along because the README references it.
+      # at /demo/ and the privacy policy at /privacy.html, which the Chrome Web
+      # Store listing links to. The logo goes along because the README
+      # references it.
       - name: Collect site files
         run: |
           mkdir -p site/design
           cp README.md site/index.md
+          cp PRIVACY.md site/privacy.md
           cp -r design/logo site/design/logo
           cp -r demo site/demo
           cat > site/_config.yml <<'EOF'
