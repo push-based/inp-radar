@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>INP Radar demo</title>
+    <meta
+      name="description"
+      content="A page that reproduces the two causes of bad INP: background work that blocks the main thread, and an expensive interaction."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --primary: #7839ee;
+        --primary-hover: #6927da;
+        --on-primary: #fcfcfd;
+        --focus: #875bf7;
+        --background: #fcfcfd;
+        --surface: #eef2f6;
+        --ink: #121926;
+        --muted: #4b5565;
+        --hairline: #e3e8ef;
+        --grid: #cdd5df;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary: #c3b5fd;
+          --primary-hover: #ddd6fe;
+          --on-primary: #0d121c;
+          --background: #0d121c;
+          --surface: #121926;
+          --ink: #f8fafc;
+          --muted: #9aa4b2;
+          --hairline: #202939;
+          --grid: #364152;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 2rem 1rem 3rem;
+        background: var(--background);
+        color: var(--ink);
+        font:
+          400 0.9375rem / 1.5 system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
+      main {
+        max-width: 40rem;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        line-height: 1.25;
+      }
+
+      h2 {
+        margin: 0 0 0.5rem;
+        font:
+          600 1rem / 1.5rem ui-monospace,
+          monospace;
+      }
+
+      p {
+        margin: 0 0 0.75rem;
+      }
+
+      .lead {
+        color: var(--muted);
+      }
+
+      section {
+        margin-top: 1rem;
+        padding: 1.25rem 1rem;
+        border-radius: 0.75rem;
+        background: var(--surface);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        align-items: end;
+        margin: 1rem 0 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+
+      label.toggle {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9375rem;
+        color: var(--ink);
+      }
+
+      input[type='number'] {
+        width: 7rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--grid);
+        border-radius: 0.375rem;
+        background: var(--background);
+        color: var(--ink);
+        font: inherit;
+        font-family: ui-monospace, monospace;
+      }
+
+      input[type='checkbox'] {
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        accent-color: var(--primary);
+      }
+
+      button {
+        padding: 0.375rem 0.875rem;
+        border: 0;
+        border-radius: 0.375rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 150ms ease-out;
+      }
+
+      button:hover {
+        background: var(--primary-hover);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .data,
+      output {
+        font-family: ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      output {
+        display: block;
+        min-height: 1.5rem;
+        font-size: 0.875rem;
+      }
+
+      .meter {
+        height: 0.5rem;
+        margin: 0.25rem 0 0.5rem;
+        border-radius: 9999px;
+        background: var(--background);
+        overflow: hidden;
+      }
+
+      .meter > div {
+        height: 100%;
+        background: var(--muted);
+        transform-origin: left;
+        transform: scaleX(0);
+      }
+
+      .hint {
+        margin: 0.75rem 0 0;
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+
+      code {
+        font-family: ui-monospace, monospace;
+        font-size: 0.875em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>INP Radar demo</h1>
+      <p class="lead">
+        A slow interaction has two possible causes. Either the interaction itself does a lot of
+        main-thread work, or the main thread is already blocked by background work when the user
+        clicks, so the click has to wait. This page reproduces both. Open the INP Radar side panel
+        on this tab and watch the radar, the heartbeat trace and the event log.
+      </p>
+
+      <section aria-labelledby="timer-title">
+        <h2 id="timer-title">1. Background work: a recurring timer</h2>
+        <p>
+          A <code>setInterval</code> callback blocks the main thread for the block length, once per
+          interval. Each run is one long task. Nobody has to interact: the radar wedge grows and the
+          heartbeat trace spikes on every run, at a regular rhythm.
+        </p>
+
+        <div class="controls">
+          <label class="toggle">
+            <input id="timer-on" type="checkbox" checked />
+            Run the recurring timer
+          </label>
+          <label>
+            Block length (ms)
+            <input id="block-ms" type="number" min="50" max="2000" step="50" value="300" />
+          </label>
+          <label>
+            Interval (ms)
+            <input id="interval-ms" type="number" min="500" max="10000" step="500" value="3000" />
+          </label>
+        </div>
+
+        <div class="meter" aria-hidden="true"><div id="next-block"></div></div>
+        <output id="timer-status" aria-live="polite"></output>
+        <p class="hint">
+          The bar fills up to the next block. It stops moving while the page is blocked, because
+          nothing on the page can render until the long task ends.
+        </p>
+        <p class="hint">
+          To find this work in a Chrome DevTools Performance trace, record across a spike. The long
+          task shows up as a timer firing.
+        </p>
+      </section>
+
+      <section aria-labelledby="expensive-title">
+        <h2 id="expensive-title">2. An expensive interaction</h2>
+        <p>
+          This click handler runs 250 ms of synchronous work before it updates the page. The main
+          thread was idle when you clicked, so input delay is low, but the interaction is still
+          slow: almost all of it is processing time.
+        </p>
+        <p><button id="expensive" type="button">Run 250 ms of work on click</button></p>
+        <output id="expensive-status" aria-live="polite"></output>
+        <p class="hint">
+          Turn the recurring timer off first, so a block can't add input delay to this click. On a
+          real page, wait until the radar shows the main thread is idle, then record a trace and
+          interact, to measure the interaction's own cost.
+        </p>
+      </section>
+
+      <section aria-labelledby="cheap-title">
+        <h2 id="cheap-title">3. A cheap interaction, idle and blocked</h2>
+        <p>
+          This click handler only updates a counter. Click it while the page is idle and the
+          interaction is fast. Click it while the recurring timer is blocking the main thread and
+          the click waits for the long task to finish. That wait is input delay, and it makes a
+          cheap interaction slow.
+        </p>
+        <p><button id="cheap" type="button">Update a counter on click</button></p>
+        <output id="cheap-status" aria-live="polite"></output>
+        <p class="hint">
+          To land a click inside a block, click when the bar in section 1 is full, or set the block
+          length to 1000&nbsp;ms to make the block easier to hit.
+        </p>
+      </section>
+    </main>
+
+    <script type="module">
+      /** Keeps the main thread busy for `ms`, like any long synchronous task would. */
+      function block(ms) {
+        const end = performance.now() + ms;
+
+        while (performance.now() < end) {}
+      }
+
+      const $ = (id) => document.getElementById(id);
+
+      // --- 1. Recurring timer ------------------------------------------------
+      const timerOn = $('timer-on');
+      const blockInput = $('block-ms');
+      const intervalInput = $('interval-ms');
+      const nextBlock = $('next-block');
+      const timerStatus = $('timer-status');
+
+      let timer = 0;
+      let runs = 0;
+      let lastRun = 0;
+      let blockMs = 0;
+      let intervalMs = 0;
+
+      function readSettings() {
+        intervalMs = Math.max(500, Number(intervalInput.value) || 3000);
+        // A block as long as the interval would leave the page blocked for good.
+        blockMs = Math.min(Math.max(0, Number(blockInput.value) || 0), intervalMs - 100);
+      }
+
+      function describeTimer() {
+        timerStatus.textContent = timer
+          ? `Blocks for ${blockMs} ms every ${intervalMs} ms. Long tasks so far: ${runs}.`
+          : 'Off. The main thread is idle unless you interact.';
+      }
+
+      function restartTimer() {
+        clearInterval(timer);
+        timer = 0;
+        readSettings();
+
+        if (timerOn.checked) {
+          lastRun = performance.now();
+          timer = setInterval(() => {
+            lastRun = performance.now();
+            block(blockMs);
+            runs += 1;
+            describeTimer();
+          }, intervalMs);
+        }
+
+        describeTimer();
+      }
+
+      // The bar is drawn on this page's own frames, so it freezes during a block.
+      function drawProgress() {
+        const progress = timer ? Math.min(1, (performance.now() - lastRun) / intervalMs) : 0;
+
+        nextBlock.style.transform = `scaleX(${progress})`;
+        requestAnimationFrame(drawProgress);
+      }
+
+      timerOn.addEventListener('change', restartTimer);
+      blockInput.addEventListener('change', restartTimer);
+      intervalInput.addEventListener('change', restartTimer);
+      restartTimer();
+      requestAnimationFrame(drawProgress);
+
+      // --- 2. Expensive interaction -----------------------------------------
+      let expensiveClicks = 0;
+
+      $('expensive').addEventListener('click', () => {
+        block(250);
+        expensiveClicks += 1;
+        $('expensive-status').textContent =
+          `Clicked ${expensiveClicks} ${expensiveClicks === 1 ? 'time' : 'times'}. Each click ran 250 ms of work before this text updated.`;
+      });
+
+      // --- 3. Cheap interaction ---------------------------------------------
+      let cheapClicks = 0;
+
+      $('cheap').addEventListener('click', () => {
+        cheapClicks += 1;
+        $('cheap-status').textContent =
+          `Clicked ${cheapClicks} ${cheapClicks === 1 ? 'time' : 'times'}.`;
+      });
+    </script>
+  </body>
+</html>

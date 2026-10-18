@@ -3,11 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "description": "Chrome extension showing live INP, a main-thread radar and an event log in a side panel",
+  "keywords": [
+    "chrome-extension",
+    "core-web-vitals",
+    "inp",
+    "interaction-to-next-paint",
+    "performance",
+    "side-panel",
+    "web-vitals"
+  ],
+  "homepage": "https://github.com/push-based/inp-radar#readme",
+  "bugs": {
+    "url": "https://github.com/push-based/inp-radar/issues"
+  },
   "license": "Apache-2.0",
+  "author": {
+    "name": "Christopher Holder",
+    "url": "https://github.com/ChristopherPHolder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/push-based/inp-radar.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
+    "demo": "vite demo",
+    "store-images": "wxt build && node tools/store/capture.ts",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
