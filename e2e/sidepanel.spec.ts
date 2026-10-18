@@ -1,4 +1,5 @@
-import { expect, SITE, test } from './fixtures';
+import { expect, test } from './fixtures';
+import { SITE } from './test-page';
 
 test('connects to the active tab', async ({ page, openPanel }) => {
   await page.goto(`${SITE}/connect`);

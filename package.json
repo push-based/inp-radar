@@ -40,6 +40,7 @@
     "test:watch": "vitest",
     "e2e": "wxt build && playwright test",
     "e2e:ui": "wxt build && playwright test --ui",
+    "screenshots": "wxt build && node tools/screenshots/capture.ts",
     "postinstall": "wxt prepare",
     "lint": "oxlint",
     "format": "oxfmt",
