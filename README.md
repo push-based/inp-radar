@@ -149,6 +149,30 @@ To load a build manually, open `chrome://extensions`, enable Developer mode,
 click **Load unpacked** and pick `.output/chrome-mv3`. Click the toolbar icon to
 open the side panel.
 
+### Publishing
+
+The **Publish** workflow submits a build to the Chrome Web Store. It only runs
+by hand: bump `version` in `package.json`, then go to **Actions → Publish → Run
+workflow**. Tick **dry-run** to check the credentials without uploading.
+**STAGED_PUBLISH** holds the version after review until you publish it from the
+developer dashboard.
+
+The store API can't create an item, so the first version is uploaded by hand in
+the [developer dashboard](https://chrome.google.com/webstore/devconsole), along
+with the listing and privacy details. After that, the workflow needs a
+`chrome-web-store` environment in the repository settings with:
+
+| Name                                  | Kind     | Value                                                  |
+| ------------------------------------- | -------- | ------------------------------------------------------ |
+| `CHROME_EXTENSION_ID`                 | variable | The item ID from the dashboard                         |
+| `CHROME_PUBLISHER_ID`                 | variable | The publisher ID from the dashboard's account page     |
+| `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | variable | The email of a Google Cloud service account            |
+| `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY`  | secret   | The `private_key` from that service account's JSON key |
+
+The service account needs the Chrome Web Store API enabled in its Google Cloud
+project, and its email added to the publisher in the dashboard's account
+settings.
+
 ## Limitations
 
 - Tabs that were open before the extension was installed need a reload.

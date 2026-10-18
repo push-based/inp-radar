@@ -1,0 +1,64 @@
+name: Publish
+
+# Run by hand from the Actions tab. It builds the Chrome zip and submits it to
+# the Chrome Web Store for review. Bump "version" in package.json first: the
+# store rejects a version it already has.
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Only check the credentials, don't upload anything
+        type: boolean
+        default: false
+      publish-type:
+        description: What happens once the review passes
+        type: choice
+        options:
+          - DEFAULT_PUBLISH
+          - STAGED_PUBLISH
+        default: DEFAULT_PUBLISH
+
+# Never run two submissions at once.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  chrome:
+    name: Chrome Web Store
+    runs-on: ubuntu-latest
+    # The credentials live in this environment, so it can also require approval.
+    environment:
+      name: chrome-web-store
+      url: https://chromewebstore.google.com/detail/${{ vars.CHROME_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm compile
+      - run: pnpm test
+      - run: pnpm zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: inp-radar-chrome
+          path: .output/*-chrome.zip
+          # .output starts with a dot, which upload-artifact skips by default.
+          include-hidden-files: true
+          if-no-files-found: error
+      - name: Submit
+        run: pnpm wxt submit --chrome-zip .output/*-chrome.zip
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+          CHROME_API_VERSION: v2
+          CHROME_PUBLISH_TYPE: ${{ inputs.publish-type }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ vars.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
