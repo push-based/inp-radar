@@ -11,6 +11,13 @@ that stays open while you interact with the page. Inspired by Phil Walton's
 [INP demo](https://chrome.dev/inp-demo/)
 ([source](https://github.com/GoogleChromeLabs/web-perf-demos/tree/main/inp-demo)).
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/sidepanel-dark.png">
+    <img src="docs/screenshots/sidepanel-light.png" alt="The INP Radar side panel during a 1.5 s main-thread block: INP of 600 ms with its breakdown, a red radar wedge, three spikes on the heartbeat trace and the event log" width="400">
+  </picture>
+</p>
+
 Built with [WXT](https://wxt.dev) and vanilla TypeScript.
 
 ## Development
@@ -22,6 +29,7 @@ pnpm build      # production build in .output/chrome-mv3
 pnpm compile    # type-check
 pnpm test       # unit tests (Vitest); `pnpm test:watch` to re-run on change
 pnpm e2e        # build, then run the Playwright end-to-end tests
+pnpm screenshots # build, then re-render the README screenshots
 ```
 
 Unit tests sit next to the code as `*.test.ts` and run in jsdom with WXT's
@@ -31,6 +39,10 @@ The end-to-end tests in `e2e/` load the built extension into Playwright's
 Chromium (run `pnpm exec playwright install chromium` once). The side panel
 can't be opened from a test, so they load `sidepanel.html` in a tab and then
 switch to the test page, which the panel follows as it would the active tab.
+
+The screenshots in `docs/screenshots/` come from `tools/screenshots/capture.ts`,
+which uses the same setup and clicks the test page on a fixed schedule. Joining
+the GIF frames needs Python 3 with Pillow.
 
 To load a build manually, open `chrome://extensions`, enable Developer mode,
 click **Load unpacked** and pick `.output/chrome-mv3`. Click the toolbar icon to
@@ -72,6 +84,15 @@ the page's last frame on a square-root scale, with reference lines at 50, 200
 and 500 ms. A healthy page draws a flat green line. A block draws a spike that
 climbs for as long as it lasts and drops when frames resume, so you can compare
 several blocks side by side. The readout shows the peak in the current sweep.
+
+Here the page blocks its main thread for 300, 600 and 1500 ms on three clicks:
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/sidepanel-dark.gif">
+    <img src="docs/screenshots/sidepanel-light.gif" alt="Animation of the side panel as three clicks block the page: the radar wedge grows and turns red, the heartbeat spikes and INP rises to 1504 ms" width="400">
+  </picture>
+</p>
 
 ## Limitations
 
