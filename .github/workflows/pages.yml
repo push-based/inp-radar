@@ -1,0 +1,53 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Let a running deployment finish rather than cancel it halfway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      # The site is the README, rendered by Jekyll, plus the static demo page
+      # at /demo/. The logo goes along because the README references it.
+      - name: Collect site files
+        run: |
+          mkdir -p site/design
+          cp README.md site/index.md
+          cp -r design/logo site/design/logo
+          cp -r demo site/demo
+          cat > site/_config.yml <<'EOF'
+          title: INP Radar
+          description: See when a page's main thread is blocked, live, in a Chrome side panel.
+          EOF
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: site
+          destination: _site
+      - uses: actions/upload-pages-artifact@v5
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
