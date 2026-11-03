@@ -55,5 +55,5 @@ PRIVACY
 
 INP Radar measures the page inside your browser and sends nothing anywhere. There are no accounts, analytics or tracking.
 
-The radar is adapted from Phil Walton's INP demo. INP Radar is open source under the Apache 2.0 license: https://github.com/push-based/inp-radar
+The radar is adapted from Phil Walton's INP demo (https://chrome.dev/inp-demo/), which built on earlier work by Monica Dinculescu and Dan Abramov. INP Radar is open source under the Apache 2.0 license: https://github.com/push-based/inp-radar
 ```

@@ -17,6 +17,11 @@ blocked, live, in a side panel next to the page. Open any site, leave it alone,
 and watch: background work shows up as spikes, often on a regular beat. Those
 are the moments when a user's click would get a poor INP.
 
+The radar comes from Phil Walton's [INP demo](https://chrome.dev/inp-demo/),
+which built on earlier work by
+[Monica Dinculescu](https://input-delay.glitch.me/) and
+[Dan Abramov](https://youtu.be/nLF0n9SACd4?t=267).
+
 [Try it on the demo page](https://push-based.github.io/inp-radar/demo/).
 
 <p align="center">

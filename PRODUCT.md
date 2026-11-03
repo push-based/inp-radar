@@ -58,7 +58,7 @@ The panel renders in a separate process from the page, so it keeps animating whi
 
 - None in the repo: no screenshots, testimonials, usage numbers or case studies. Don't invent any.
 - Planned: a demo page that reproduces both causes (a recurring timer doing heavy work, and an expensive click handler). It will be the worked example in the docs.
-- Credits: Phil Walton's INP demo (https://chrome.dev/inp-demo/), Apache-2.0.
+- Credits: Phil Walton's INP demo (https://chrome.dev/inp-demo/), Apache-2.0, which built on earlier work by Monica Dinculescu (https://input-delay.glitch.me/) and Dan Abramov (https://youtu.be/nLF0n9SACd4?t=267).
 
 ## Product Principles
 
