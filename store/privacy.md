@@ -6,7 +6,7 @@ is pasted as is.
 ## Single purpose
 
 ```text
-INP Radar measures how responsive the page in the active tab is and shows it in Chrome's side panel: when the page's main thread is blocked, the page's INP (Interaction to Next Paint) with its breakdown into input delay, processing and presentation, and a log of slow interactions. Everything it does serves that one measurement.
+INP Radar shows how responsive the page in the active tab is, in Chrome's side panel: when its main thread is blocked, its INP (Interaction to Next Paint) with a breakdown, and a log of slow interactions.
 ```
 
 ## Permission justifications
@@ -20,7 +20,7 @@ The extension's whole interface is a side panel. It sits next to the page it mea
 **Host permission** (the content script matches `<all_urls>`)
 
 ```text
-The content script measures responsiveness inside the page. It observes interaction timing with the PerformanceObserver API and the web-vitals library, and sends a heartbeat on each animation frame while the side panel is open. It runs on all sites because developers use it on whichever page they are debugging, and it starts at document_start so it records every interaction from page load, since INP covers the whole page view. It reads no page text, changes nothing on the page and makes no network requests. Measurements go only to the extension's own side panel.
+The content script measures responsiveness inside the page. It observes interaction timing with the PerformanceObserver API and the web-vitals library, and sends a heartbeat on each animation frame while the side panel is open. It runs on all sites because developers use it on whichever page they are debugging, and it starts at document_start so it records every interaction from page load, since INP covers the whole page view. activeTab isn't enough: it only grants access after the user clicks the toolbar icon, so it would miss everything before that. It reads no page text, changes nothing on the page and makes no network requests. Measurements go only to the extension's own side panel.
 ```
 
 ## Remote code

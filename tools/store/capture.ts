@@ -1,10 +1,11 @@
 /**
- * Renders the Chrome Web Store images into store/. The small promo tile is
- * tools/store/promo.html at 440×280. The screenshots are the demo page with
- * the side panel beside it, 1280×800, for each scene in light and dark. They
- * use the same setup as the e2e tests (the built extension in Playwright's
- * Chromium, sidepanel.html in a tab beside the page) and play the same
- * interactions every time.
+ * Renders the Chrome Web Store images into store/. The promo tiles are
+ * tools/store/promo.html at 440×280 and tools/store/marquee.html at 1400×560,
+ * which shows the panel from one of the screenshots. The screenshots are the
+ * demo page with the side panel beside it, 1280×800, for each scene in light
+ * and dark. They use the same setup as the e2e tests (the built extension in
+ * Playwright's Chromium, sidepanel.html in a tab beside the page) and play the
+ * same interactions every time.
  *
  * The real side panel can't be opened from a script, so the page and the
  * panel are captured separately and placed side by side, as Chrome shows them.
@@ -67,21 +68,46 @@ if (!existsSync(path.join(EXTENSION_PATH, 'manifest.json'))) {
 
 mkdirSync(OUT, { recursive: true });
 
-await renderPromo();
+await renderTile('promo.html', 440, 280, 'promo-small.png');
+
+/** The side panel from each scene, by scene name and color scheme. */
+const panels = new Map<string, Buffer>();
 
 for (const scene of SCENES) {
   for (const scheme of ['light', 'dark'] as const) {
-    await capture(scene, scheme);
+    panels.set(`${scene.name}-${scheme}`, await capture(scene, scheme));
   }
 }
 
-async function renderPromo() {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 440, height: 280 } });
+await renderTile('marquee.html', 1400, 560, 'marquee.png', panels.get('blocked-dark'));
 
-  await page.goto(pathToFileURL(path.join(import.meta.dirname, 'promo.html')).href);
+/**
+ * Renders one of the promo tiles in tools/store/. `panel` fills in the page's
+ * #panel image, if it has one.
+ */
+async function renderTile(
+  source: string,
+  width: number,
+  height: number,
+  file: string,
+  panel?: Buffer,
+) {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width, height } });
+
+  await page.goto(pathToFileURL(path.join(import.meta.dirname, source)).href);
+
+  if (panel) {
+    await page
+      .locator('#panel')
+      .evaluate(
+        (img: HTMLImageElement, src) => ((img.src = src), img.decode()),
+        `data:image/png;base64,${panel.toString('base64')}`,
+      );
+  }
+
   await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: path.join(OUT, 'promo-small.png') });
+  await page.screenshot({ path: path.join(OUT, file) });
   await browser.close();
 }
 
@@ -148,6 +174,8 @@ async function capture(scene: Scene, scheme: 'light' | 'dark') {
   await Promise.all(clicks);
   await compose(panel, page, side, scheme, path.join(OUT, `${scene.name}-${scheme}.png`));
   await context.close();
+
+  return side;
 }
 
 /** Waits for the panel's sweep to wrap. */
