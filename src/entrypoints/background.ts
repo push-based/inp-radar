@@ -86,7 +86,7 @@ function serveRecording(port: Browser.runtime.Port) {
       await Promise.all([...targets.values()].map(discardRecording));
       targets.clear();
 
-      throw new Error('The tab closed while the recording was starting.');
+      throw new Error('Chrome stopped the recording while it was starting.');
     }
 
     live = true;

@@ -1,3 +1,4 @@
+import { describeError } from '@/shared/errors';
 import {
   RECORDING_PORT,
   type DetachReason,
@@ -150,6 +151,13 @@ export class NativeRecording {
           done();
         }
       });
+    } catch (cause) {
+      // Videos that already arrived in full are still saved; the rest failed.
+      const missing = videos.filter(
+        (video) => !result.files.some((f) => f.name === `${video}.mp4`),
+      );
+
+      for (const video of missing) result.failures.push(`${video}.mp4: ${describeError(cause)}`);
     } finally {
       this.close();
     }

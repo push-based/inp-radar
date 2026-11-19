@@ -230,7 +230,8 @@ function renderRecording(label?: string) {
 
   recordButton.dataset.recording = String(recording !== undefined);
   recordButton.textContent = label ?? (recording ? `Stop ${time}` : 'Record');
-  modeSelect.disabled = recording !== undefined;
+  // Locked while recording, and while one is starting or saving.
+  modeSelect.disabled = recording !== undefined || recordButton.disabled;
 }
 
 /** A line under the controls about the last recording; empty hides it. */
@@ -322,6 +323,8 @@ async function finishRecording(current: Recording, { videos, explain }: Ending) 
   if (files.length > 0) await save(current.host, files);
 
   if (explain) {
+    if (failures.length > 0) console.warn(failures.join('; '));
+
     showMessage(explain(files.length > 0));
 
     return;
@@ -428,9 +431,14 @@ recordButton.addEventListener('click', async () => {
     return;
   }
 
-  if (tabId === undefined) return;
+  if (tabId === undefined) {
+    showMessage('There is no tab to record in this window.');
+
+    return;
+  }
 
   recordButton.disabled = true;
+  renderRecording();
   showMessage('');
 
   try {
