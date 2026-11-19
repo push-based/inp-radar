@@ -1,3 +1,7 @@
+import { readFile } from 'node:fs/promises';
+
+import type { Download } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 import { SITE } from './test-page';
 
@@ -137,7 +141,10 @@ test('says when a page cannot be measured', async ({ page, openPanel }) => {
   await expect(panel.locator('#reload')).toBeVisible();
 });
 
-test('records the tab and the panel to two MP4s', async ({ page, openPanel }) => {
+test('records the tab and the panel, with subtitles for each interaction', async ({
+  page,
+  openPanel,
+}) => {
   await page.goto(`${SITE}/connect`);
   const panel = await openPanel(page);
   const record = panel.locator('#record');
@@ -145,40 +152,60 @@ test('records the tab and the panel to two MP4s', async ({ page, openPanel }) =>
   await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
   await record.click();
   await expect(record).toHaveAttribute('data-recording', 'true');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(500);
+  await page.click('#slow');
+  await expect(panel.locator('#event-log tr', { hasText: 'click' })).toHaveCount(1);
+
+  const downloads: Download[] = [];
+
+  panel.on('download', (download) => downloads.push(download));
+  await record.click();
+  await expect(record).toHaveText('Record');
+  await expect.poll(() => downloads.length).toBe(3);
+
+  const names = downloads.map((download) => download.suggestedFilename());
+  const base = names[0]?.replace(/-page\.mp4$/, '');
+
+  expect(names).toEqual([`${base}-page.mp4`, `${base}-panel.mp4`, `${base}-page.vtt`]);
+  expect(base).toMatch(/^inp-radar-inp-radar\.test-/);
+
+  const subtitles = await readFile((await downloads[2]?.path()) ?? '', 'utf8');
+
+  expect(subtitles).toMatch(/^WEBVTT\n\n00:00:0\d\.\d{3} --> /);
+  expect(subtitles).toMatch(/Worst interaction: .*click.* · \d+ ms · (needs improvement|poor)/);
+});
+
+test('records the whole window to one video, without subtitles when unticked', async ({
+  page,
+  openPanel,
+}) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+  const subtitles = panel.getByLabel('Subtitles');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await panel.locator('#record-mode').selectOption('window');
+  await subtitles.uncheck();
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await expect(panel.locator('#record-mode')).toBeDisabled();
+  await expect(subtitles).toBeDisabled();
+  await page.click('#slow');
+  await expect(panel.locator('#event-log tr', { hasText: 'click' })).toHaveCount(1);
 
   const names: string[] = [];
 
   panel.on('download', (download) => names.push(download.suggestedFilename()));
   await record.click();
   await expect(record).toHaveText('Record');
-  await expect.poll(() => names.length).toBe(2);
-  expect(names.sort()).toEqual([
-    expect.stringMatching(/^inp-radar-inp-radar\.test-.+-page\.mp4$/),
-    expect.stringMatching(/^inp-radar-inp-radar\.test-.+-panel\.mp4$/),
+  await expect.poll(() => names.length).toBe(1);
+  await page.waitForTimeout(500);
+  expect(names).toEqual([
+    expect.stringMatching(/^inp-radar-inp-radar\.test-.+-window\.(mp4|webm)$/),
   ]);
-});
 
-test('records the whole window to one video', async ({ page, openPanel }) => {
-  await page.goto(`${SITE}/connect`);
-  const panel = await openPanel(page);
-  const record = panel.locator('#record');
-
-  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
-  await panel.locator('#record-mode').selectOption('window');
-  await record.click();
-  await expect(record).toHaveAttribute('data-recording', 'true');
-  await expect(panel.locator('#record-mode')).toBeDisabled();
-  await page.waitForTimeout(1000);
-
-  const download = panel.waitForEvent('download');
-
-  await record.click();
-
-  expect((await download).suggestedFilename()).toMatch(
-    /^inp-radar-inp-radar\.test-.+-window\.(mp4|webm)$/,
-  );
-  await expect(record).toHaveText('Record');
   await panel.reload();
   await expect(panel.locator('#record-mode')).toHaveValue('window');
+  await expect(panel.getByLabel('Subtitles')).not.toBeChecked();
 });

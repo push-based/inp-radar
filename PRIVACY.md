@@ -21,8 +21,9 @@ change the page.
 If you click **Record**, Chrome's built-in recorder captures a video of the
 tab you are measuring, and one of the side panel, until you click **Stop**. In
 **Whole window** mode, it instead records the window you pick in Chrome's share
-dialog. The videos are saved to your downloads folder. The extension doesn't
-look at them, keep them or send them anywhere.
+dialog. With **Subtitles** ticked, a text file listing the timing of each
+logged interaction is saved next to the video. The files are saved to your
+downloads folder. The extension doesn't keep them or send them anywhere.
 
 ## Where it goes
 

@@ -109,6 +109,13 @@ choice of what to record:
   downloads `inp-radar-<host>-<time>-window.webm` (VP9). This uses
   `getDisplayMedia` and `MediaRecorder`, not the native recorder.
 
+With **Subtitles** ticked (the default), **Stop** also saves a WebVTT file next
+to the video (`…-page.vtt` or `…-window.vtt`) with one subtitle per logged
+interaction, shown at the moment it happened: its events, duration, rating and
+breakdown, with the worst one marked. Players such as VLC, IINA and Chrome show
+it when it's next to the video or dropped onto it. Nothing is drawn into the
+video itself.
+
 ## How it works
 
 ```

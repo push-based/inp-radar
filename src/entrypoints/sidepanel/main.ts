@@ -1,5 +1,5 @@
 import './fonts.css';
-import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/shared/protocol';
+import { PORT_NAME, type EventRecord, type InpSnapshot, type PageMessage } from '@/shared/protocol';
 
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
@@ -16,6 +16,7 @@ import {
   type Target,
   type WindowRecording,
 } from './recorder';
+import { interactionSubtitles } from './subtitles';
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY = 300;
@@ -97,6 +98,9 @@ function handle(message: PageMessage) {
       pageUrl = describe(message.url);
       renderInp(message.inp);
       log.reset(message.events);
+
+      // A reconnect (tab switch, navigation) replays the page's buffered events.
+      for (const event of message.events) keepForSubtitles(event);
       setStatus(message.visible ? 'connected' : 'hidden', pageUrl);
       break;
     case 'beat':
@@ -110,6 +114,7 @@ function handle(message: PageMessage) {
       break;
     case 'event':
       log.add(message.event);
+      keepForSubtitles(message.event);
       break;
     case 'reset':
       pageUrl = describe(message.url);
@@ -206,6 +211,7 @@ $('reload').addEventListener('click', () => {
 //
 // "Page + panel": Chrome's native recorder, two separate AV1 videos.
 // "Whole window": the Chrome window picked in the share dialog, one video.
+// Either way, a WebVTT file next to the video marks each logged interaction.
 
 type RecordMode = 'native' | 'window';
 
@@ -214,10 +220,20 @@ type Recording =
   | { mode: 'window'; capture: WindowRecording };
 
 const MODE_KEY = 'inp-radar:record-mode';
+const SUBTITLES_KEY = 'inp-radar:record-subtitles';
 const recordButton = $('record', HTMLButtonElement);
 const modeSelect = $('record-mode', HTMLSelectElement);
+const subtitlesCheckbox = $('record-subtitles', HTMLInputElement);
 let recording: Recording | undefined;
 let recordingStart = 0;
+let recordedEvents = new Map<string, EventRecord>();
+
+/** Remembers an event while recording, once, however often it's replayed. */
+function keepForSubtitles(event: EventRecord) {
+  if (recording)
+    recordedEvents.set(`${event.interactionId}:${event.name}:${event.timestamp}`, event);
+}
+
 let recordingTimer: ReturnType<typeof setInterval> | undefined;
 
 function renderRecording(label?: string) {
@@ -227,6 +243,7 @@ function renderRecording(label?: string) {
   recordButton.dataset.recording = String(recording !== undefined);
   recordButton.textContent = label ?? (recording ? `Stop ${time}` : 'Record');
   modeSelect.disabled = recording !== undefined;
+  subtitlesCheckbox.disabled = recording !== undefined;
 }
 
 function endRecording() {
@@ -250,24 +267,42 @@ function onDetach(source: Target) {
   renderRecording();
 }
 
-function download(video: Blob, suffix: string) {
+function download(file: Blob, name: string) {
   const link = document.createElement('a');
-  const host = pageUrl.split('/')[0] || 'page';
-  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
-  const extension = video.type.startsWith('video/webm') ? 'webm' : 'mp4';
 
-  link.href = URL.createObjectURL(video);
-  link.download = `inp-radar-${host}-${stamp}-${suffix}.${extension}`;
+  link.href = URL.createObjectURL(file);
+  link.download = name;
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
 }
 
+function extensionOf(video: Blob) {
+  return video.type.startsWith('video/webm') ? 'webm' : 'mp4';
+}
+
 async function finishRecording(current: Recording) {
+  const end = Date.now();
+
+  const subtitles = subtitlesCheckbox.checked
+    ? interactionSubtitles([...recordedEvents.values()], recordingStart, end)
+    : '';
+
+  const host = pageUrl.split('/')[0] || 'page';
+  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
+  const base = `inp-radar-${host}-${stamp}`;
+
+  const saveSubtitles = (suffix: string) => {
+    if (subtitles) download(new Blob([subtitles], { type: 'text/vtt' }), `${base}-${suffix}.vtt`);
+  };
+
   endRecording();
   renderRecording('Saving…');
 
   if (current.mode === 'window') {
-    download(await stopWindowRecording(current.capture), 'window');
+    const video = await stopWindowRecording(current.capture);
+
+    download(video, `${base}-window.${extensionOf(video)}`);
+    saveSubtitles('window');
 
     return;
   }
@@ -277,21 +312,26 @@ async function finishRecording(current: Recording) {
     stopRecording(current.panel),
   ]);
 
-  download(pageVideo, 'page');
-  download(panelVideo, 'panel');
+  download(pageVideo, `${base}-page.mp4`);
+  download(panelVideo, `${base}-panel.mp4`);
+  saveSubtitles('page');
 }
 
 async function beginRecording(mode: RecordMode, id: number) {
+  recordedEvents = new Map();
+
   if (mode === 'window') {
     const capture = await startWindowRecording(() => {
       if (recording?.mode === 'window' && recording.capture === capture) void stop();
     });
 
+    recordingStart = Date.now();
     recording = { mode, capture };
   } else {
     const page: Target = { tabId: id };
     const panel = await panelTarget();
 
+    recordingStart = Date.now();
     await startRecording(page);
 
     try {
@@ -306,7 +346,6 @@ async function beginRecording(mode: RecordMode, id: number) {
     recording = { mode, page, panel };
   }
 
-  recordingStart = Date.now();
   recordingTimer = setInterval(() => renderRecording(), 500);
 }
 
@@ -339,21 +378,25 @@ function readMode(): RecordMode {
 
 try {
   modeSelect.value = localStorage.getItem(MODE_KEY) === 'window' ? 'window' : 'native';
+  subtitlesCheckbox.checked = localStorage.getItem(SUBTITLES_KEY) !== 'off';
 } catch {
   // Storage is only a convenience.
 }
 
-modeSelect.addEventListener('change', () => {
+function saveChoices() {
   try {
     localStorage.setItem(MODE_KEY, readMode());
+    localStorage.setItem(SUBTITLES_KEY, subtitlesCheckbox.checked ? 'on' : 'off');
   } catch {
     // Storage is only a convenience.
   }
-});
+}
 
-recordButton.hidden = !recordingSupported(navigator.userAgent);
+modeSelect.addEventListener('change', saveChoices);
 
-modeSelect.hidden = recordButton.hidden;
+subtitlesCheckbox.addEventListener('change', saveChoices);
+
+$('record-controls').hidden = !recordingSupported(navigator.userAgent);
 
 recordButton.addEventListener('click', async () => {
   if (recording) {
