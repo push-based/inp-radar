@@ -198,7 +198,21 @@ h2 {
   justify-content: flex-end;
   width: 100%;
 }
+.record-controls {
+  flex-wrap: wrap;
+}
 .record-controls[hidden] {
+  display: none;
+}
+.record-message {
+  color: var(--muted);
+  flex-basis: 100%;
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  margin: 0;
+  text-align: right;
+}
+.record-message[hidden] {
   display: none;
 }
 /* Record is secondary to the status: outlined, with a record dot. */
@@ -240,21 +254,6 @@ h2 {
   padding: var(--space-1) var(--space-2);
 }
 .status #record-mode:disabled {
-  opacity: 0.6;
-}
-.record-subtitles {
-  align-items: center;
-  color: var(--muted);
-  cursor: pointer;
-  display: inline-flex;
-  flex: none;
-  gap: var(--space-1);
-}
-.record-subtitles input {
-  accent-color: var(--accent);
-  margin: 0;
-}
-.record-subtitles:has(:disabled) {
   opacity: 0.6;
 }
 

@@ -20,13 +20,6 @@
           <option value="native">Page + panel</option>
           <option value="window">Whole window</option>
         </select>
-        <label
-          class="record-subtitles"
-          title="Also save a WebVTT subtitle file that marks each interaction, with its duration, in the video"
-        >
-          <input type="checkbox" id="record-subtitles" checked />
-          Subtitles
-        </label>
         <button
           id="record"
           type="button"
@@ -35,6 +28,7 @@
         >
           Record
         </button>
+        <p class="record-message" id="record-message" role="status" hidden></p>
       </div>
     </header>
 

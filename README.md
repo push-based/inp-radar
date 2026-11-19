@@ -98,23 +98,20 @@ choice of what to record:
 
 - **Page + panel** records the measured tab and the side panel at the same
   time, as two separate videos, with Chrome's native recorder
-  (`Page.startScreenRecording`, through `chrome.debugger`). **Stop** downloads
-  `inp-radar-<host>-<time>-page.mp4` and `inp-radar-<host>-<time>-panel.mp4`
-  (AV1, 60 fps). Chrome takes the frames from each compositor and encodes them
-  out of process, so recording doesn't add work to the page's main thread.
-  While it records, Chrome shows a "started debugging this browser" bar;
-  dismissing that bar stops the recording without saving.
+  (`Page.startScreenRecording`, through `chrome.debugger`). Chrome takes the
+  frames from each compositor and encodes them out of process, so recording
+  doesn't add work to the page's main thread. While it records, Chrome shows a
+  "started debugging this browser" bar; dismissing it stops the recording
+  without saving. If the recorded tab is closed, the panel video is still
+  saved.
 - **Whole window** records page and panel in one video: Chrome's share dialog
-  opens, you pick the Chrome window, and **Stop** (or Chrome's **Stop sharing**)
-  downloads `inp-radar-<host>-<time>-window.webm` (VP9). This uses
-  `getDisplayMedia` and `MediaRecorder`, not the native recorder.
+  opens and you pick the Chrome window. This uses `getDisplayMedia` and
+  `MediaRecorder` (VP9), not the native recorder. Chrome's **Stop sharing**
+  button also stops and saves.
 
-With **Subtitles** ticked (the default), **Stop** also saves a WebVTT file next
-to the video (`…-page.vtt` or `…-window.vtt`) with one subtitle per logged
-interaction, shown at the moment it happened: its events, duration, rating and
-breakdown, with the worst one marked. Players such as VLC, IINA and Chrome show
-it when it's next to the video or dropped onto it. Nothing is drawn into the
-video itself.
+**Stop** downloads one `inp-radar-<host>-<time>.zip` with the videos inside
+(`page.mp4` and `panel.mp4`, or `window.webm`), stored without recompressing.
+Closing the panel while recording stops the recording without saving.
 
 ## How it works
 
@@ -133,6 +130,11 @@ video itself.
 - `src/entrypoints/sidepanel/` connects to the active tab with `tabs.connect`,
   follows tab switches and navigations, and renders.
 - `src/shared/protocol.ts` defines the messages between the two.
+- Recording: the panel asks `src/entrypoints/background.ts` to run Chrome's
+  native recorder over `chrome.debugger` (`src/shared/screen-recording.ts`),
+  over the port described in `src/shared/recording.ts`. The background script
+  owns the debugger sessions, so it can detach when the panel closes.
+  `sidepanel/archive.ts` zips the videos.
 
 ### The radar
 
