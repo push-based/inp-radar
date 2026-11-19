@@ -26,5 +26,9 @@ export type RecorderReply =
   /** Every video asked for in `stop` was saved or failed. */
   | { type: 'stopped' }
   | { type: 'error'; message: string }
-  /** Chrome detached this video's target: its tab closed, or the user dismissed the debugging bar. */
-  | { type: 'lost'; video: VideoName };
+  /**
+   * Chrome detached this video's target: `target_closed` when its tab closed
+   * or can't be recorded any more, `canceled_by_user` when the user dismissed
+   * the debugging bar.
+   */
+  | { type: 'lost'; video: VideoName; reason: `${Browser.debugger.DetachReason}` };

@@ -7,7 +7,7 @@
  * Same calls as https://github.com/push-based/chrome-recorder.
  */
 
-type Target = Browser.debugger.Debuggee;
+export type Target = Browser.debugger.Debuggee;
 
 interface StreamResult {
   stream?: string;

@@ -259,7 +259,7 @@ test('closing the recorded tab still saves the panel video', async ({ page, open
 
   expect(Object.keys(entries)).toEqual(['panel.mp4']);
   await expect(panel.locator('#record-message')).toHaveText(
-    'The recorded tab was closed, so only the panel video was saved.',
+    "The recorded tab was closed or can't be recorded any more, so only the panel video was saved.",
   );
   await expect(record).toHaveText('Record');
 });

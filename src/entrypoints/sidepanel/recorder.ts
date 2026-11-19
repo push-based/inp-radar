@@ -4,6 +4,7 @@ import {
   type RecorderRequest,
   type VideoName,
 } from '@/shared/recording';
+import type { Target } from '@/shared/screen-recording';
 
 import type { RecordingFile } from './archive';
 
@@ -20,8 +21,6 @@ const MIN_CHROME = 153;
 /** How long to look for this panel's debugger target after retitling it. */
 const PANEL_LOOKUP_ATTEMPTS = 20;
 const PANEL_LOOKUP_INTERVAL = 50;
-
-export type Target = Browser.debugger.Debuggee;
 
 declare global {
   interface Uint8ArrayConstructor {
@@ -70,33 +69,50 @@ export interface StopResult {
   failures: string[];
 }
 
+/** What happened to a "Page + panel" recording while nobody was stopping it. */
+export interface RecordingEvents {
+  /** Chrome detached one of the videos: its tab closed, or the user dismissed the debugging bar. */
+  onLost: (video: VideoName, reason: LostReply['reason']) => void;
+  /** The background script went away, and the recording with it. */
+  onDropped: () => void;
+}
+
+type LostReply = Extract<RecorderReply, { type: 'lost' }>;
+
 /** A "Page + panel" recording, run by the background script. */
 export class NativeRecording {
   readonly #port: Browser.runtime.Port;
   #onReply: ((reply: RecorderReply) => void) | undefined;
   #onClosed: (() => void) | undefined;
+  #closed = false;
 
-  private constructor(port: Browser.runtime.Port, onLost: (video: VideoName) => void) {
+  private constructor(port: Browser.runtime.Port, events: RecordingEvents) {
     this.#port = port;
     port.onMessage.addListener((reply: RecorderReply) => {
-      if (reply.type === 'lost') onLost(reply.video);
+      if (reply.type === 'lost') events.onLost(reply.video, reply.reason);
       else this.#onReply?.(reply);
     });
-    port.onDisconnect.addListener(() => this.#onClosed?.());
+    port.onDisconnect.addListener(() => {
+      if (this.#closed) return;
+
+      this.#closed = true;
+
+      // A pending start or stop fails on its own; otherwise nobody is waiting,
+      // so the panel has to hear that the recording is gone.
+      if (this.#onClosed) this.#onClosed();
+      else events.onDropped();
+    });
   }
 
-  /**
-   * Starts recording `page` and `panel`. `onLost` runs when Chrome detaches
-   * one of them: its tab closed, or the user dismissed the debugging bar.
-   */
+  /** Starts recording `page` and `panel`. */
   static async start(
     page: Target,
     panel: Target,
-    onLost: (video: VideoName) => void,
+    events: RecordingEvents,
   ): Promise<NativeRecording> {
     const recording = new NativeRecording(
       browser.runtime.connect({ name: RECORDING_PORT }),
-      onLost,
+      events,
     );
 
     try {
@@ -144,6 +160,7 @@ export class NativeRecording {
 
   /** Disconnecting makes the background script detach whatever still records. */
   close(): void {
+    this.#closed = true;
     this.#onReply = undefined;
     this.#onClosed = undefined;
     this.#port.disconnect();
@@ -153,7 +170,9 @@ export class NativeRecording {
     request: RecorderRequest,
     onReply: (reply: RecorderReply, done: () => void) => void,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    if (this.#closed) return Promise.reject(new Error('The recording already ended.'));
+
+    return new Promise<void>((resolve, reject) => {
       this.#onReply = (reply) => {
         if (reply.type === 'error') reject(new Error(reply.message));
         else onReply(reply, resolve);
@@ -161,6 +180,9 @@ export class NativeRecording {
 
       this.#onClosed = () => reject(new Error('The background script stopped.'));
       this.#port.postMessage(request);
+    }).finally(() => {
+      this.#onReply = undefined;
+      this.#onClosed = undefined;
     });
   }
 }

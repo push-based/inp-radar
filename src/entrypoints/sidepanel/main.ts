@@ -1,6 +1,9 @@
 import './fonts.css';
+import { describeError } from '@/shared/errors';
 import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/shared/protocol';
 import type { VideoName } from '@/shared/recording';
+
+type DetachReason = `${Browser.debugger.DetachReason}`;
 
 import { zipRecording, type RecordingFile } from './archive';
 import { createEventLog } from './event-log';
@@ -140,6 +143,7 @@ function connect(id: number | undefined) {
   log.reset();
 
   tabId = id;
+  pageUrl = '';
 
   if (id === undefined) return;
   setStatus('connecting', 'Connecting…');
@@ -242,35 +246,53 @@ function endRecording() {
   clearInterval(recordingTimer);
 }
 
-// Chrome detached one of the videos: its tab closed, or the user dismissed the
-// debugging bar. Whatever still records is saved; dismissing the bar detaches
-// both, so then there's nothing left to save.
-function onLost(video: VideoName) {
+/** Why Chrome stopped one of the videos, as shown to the user. */
+function lostCause(video: VideoName, reason: DetachReason) {
+  if (reason === 'canceled_by_user') return "Recording was cancelled from Chrome's debugging bar";
+
+  return video === 'page'
+    ? "The recorded tab was closed or can't be recorded any more"
+    : 'The panel stopped recording';
+}
+
+// Chrome detached one of the videos. Whatever still records is saved;
+// dismissing the debugging bar usually detaches both, so then nothing is left.
+function onLost(video: VideoName, reason: DetachReason) {
   if (recording?.mode !== 'native') return;
 
   const current = recording;
+  const other: VideoName = video === 'page' ? 'panel' : 'page';
 
   endRecording();
   recordButton.disabled = true;
   renderRecording('Saving…');
   void (async () => {
-    const other: VideoName = video === 'page' ? 'panel' : 'page';
-    const { files } = await current.session.stop([other]).catch(() => ({ files: [] }));
+    try {
+      const { files } = await current.session.stop([other]).catch(() => ({ files: [] }));
 
-    if (files.length > 0) {
-      await save(current.host, files);
+      if (files.length > 0) await save(current.host, files);
+
       showMessage(
-        video === 'page'
-          ? 'The recorded tab was closed, so only the panel video was saved.'
-          : 'The panel stopped recording, so only the page video was saved.',
+        files.length > 0
+          ? `${lostCause(video, reason)}, so only the ${other} video was saved.`
+          : `${lostCause(video, reason)}. Nothing was saved.`,
       );
-    } else {
-      showMessage("Recording was cancelled from Chrome's debugging bar. Nothing was saved.");
+    } catch (cause) {
+      fail(cause);
+    } finally {
+      recordButton.disabled = false;
+      renderRecording();
     }
-
-    recordButton.disabled = false;
-    renderRecording();
   })();
+}
+
+// The background script went away mid-recording, taking the recording with it.
+function onDropped() {
+  if (recording?.mode !== 'native') return;
+
+  endRecording();
+  renderRecording();
+  showMessage('Recording stopped unexpectedly. Nothing was saved.');
 }
 
 async function save(host: string, files: RecordingFile[]) {
@@ -307,8 +329,9 @@ async function finishRecording(current: Recording) {
 }
 
 async function beginRecording(mode: RecordMode, id: number) {
-  // The host now, before a tab switch or navigation can change it.
-  const host = pageUrl.split('/')[0] || 'page';
+  // The host now, before a tab switch or navigation can change it. Only a
+  // connected page's URL is this tab's; otherwise it may be the previous tab's.
+  const host = (connected && pageUrl.split('/')[0]) || 'page';
 
   if (mode === 'window') {
     const capture = await startWindowRecording(() => {
@@ -317,7 +340,10 @@ async function beginRecording(mode: RecordMode, id: number) {
 
     recording = { mode, host, capture };
   } else {
-    const session = await NativeRecording.start({ tabId: id }, await panelTarget(), onLost);
+    const session = await NativeRecording.start({ tabId: id }, await panelTarget(), {
+      onLost,
+      onDropped,
+    });
 
     recording = { mode, host, session };
   }
@@ -348,10 +374,6 @@ function fail(cause: unknown) {
 
   console.error(cause);
   showMessage(`Recording failed: ${describeError(cause)}`);
-}
-
-function describeError(cause: unknown) {
-  return cause instanceof Error ? cause.message : String(cause);
 }
 
 function readMode(): RecordMode {

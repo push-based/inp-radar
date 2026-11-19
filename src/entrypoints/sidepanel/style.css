@@ -195,11 +195,9 @@ h2 {
   align-items: center;
   display: flex;
   gap: var(--space-2);
+  flex-wrap: wrap;
   justify-content: flex-end;
   width: 100%;
-}
-.record-controls {
-  flex-wrap: wrap;
 }
 .record-controls[hidden] {
   display: none;
