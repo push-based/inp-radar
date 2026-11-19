@@ -1,6 +1,7 @@
 import { describeError } from '@/shared/errors';
 import {
   RECORDING_PORT,
+  type DetachReason,
   type RecorderReply,
   type RecorderRequest,
   type VideoName,
@@ -10,6 +11,7 @@ import {
   readRecording,
   sameTarget,
   startRecording,
+  stopRecording,
   type Target,
 } from '@/shared/screen-recording';
 
@@ -42,52 +44,83 @@ function serveRecording(port: Browser.runtime.Port) {
     }
   };
 
-  const onDetach = (source: Target, reason: `${Browser.debugger.DetachReason}`) => {
+  // Becomes true once both videos record; until then a detach isn't reported
+  // to the panel, start just fails instead.
+  let live = false;
+
+  const onDetach = (source: Target, reason: DetachReason) => {
     for (const [video, target] of targets) {
       if (!sameTarget(source, target)) continue;
 
       targets.delete(video);
-      send({ type: 'lost', video, reason });
+
+      if (live) send({ type: 'lost', video, reason });
     }
   };
 
-  const handle = async (request: RecorderRequest) => {
-    if (request.type === 'start') {
-      await startRecording(request.page);
+  const start = async (page: Target, panel: Target) => {
+    // Tracked from the moment each attaches, so a detach during the other's
+    // start is seen, and a closing panel detaches it.
+    await startRecording(page);
+    targets.set('page', page);
 
-      try {
-        await startRecording(request.panel);
-      } catch (cause) {
-        await discardRecording(request.page);
+    try {
+      await startRecording(panel);
+      targets.set('panel', panel);
+    } catch (cause) {
+      targets.delete('page');
+      await discardRecording(page);
 
-        throw cause;
-      }
+      throw cause;
+    }
 
-      // The panel closed while this was attaching, after onDisconnect already
-      // detached everything it knew about.
-      if (closed) {
-        await Promise.all([discardRecording(request.page), discardRecording(request.panel)]);
-
-        return;
-      }
-
-      targets.set('page', request.page);
-      targets.set('panel', request.panel);
-      send({ type: 'started' });
+    // The panel closed while this was attaching, after onDisconnect already
+    // detached everything it knew about.
+    if (closed) {
+      await Promise.all([discardRecording(page), discardRecording(panel)]);
 
       return;
     }
 
-    // One video failing doesn't stop the other from being saved.
-    for (const video of request.videos) {
-      const target = targets.get(video);
+    if (targets.size < 2) {
+      await Promise.all([...targets.values()].map(discardRecording));
+      targets.clear();
 
-      targets.delete(video);
+      throw new Error('The tab closed while the recording was starting.');
+    }
+
+    live = true;
+    send({ type: 'started' });
+  };
+
+  const stop = async (videos: VideoName[]) => {
+    // Stop every video first, so they end at the same moment, then read them.
+    const stopped = await Promise.all(
+      videos.map(async (video) => {
+        const target = targets.get(video);
+
+        targets.delete(video);
+
+        try {
+          if (!target) throw new Error('it was no longer recording');
+
+          return { video, target, handle: await stopRecording(target) };
+        } catch (cause) {
+          send({ type: 'failed', video, message: describeError(cause) });
+
+          return null;
+        }
+      }),
+    );
+
+    // One video failing doesn't stop the other from being saved.
+    for (const result of stopped) {
+      if (!result) continue;
+
+      const { video, target, handle } = result;
 
       try {
-        if (!target) throw new Error('it was no longer recording');
-
-        await readRecording(target, (data, base64) => {
+        await readRecording(target, handle, (data, base64) => {
           // Nobody is left to receive the video: stop reading, which detaches.
           if (closed) throw new Error('The panel closed.');
 
@@ -99,8 +132,12 @@ function serveRecording(port: Browser.runtime.Port) {
       }
     }
 
+    live = false;
     send({ type: 'stopped' });
   };
+
+  const handle = (request: RecorderRequest) =>
+    request.type === 'start' ? start(request.page, request.panel) : stop(request.videos);
 
   browser.debugger.onDetach.addListener(onDetach);
   port.onMessage.addListener((request: RecorderRequest) => {

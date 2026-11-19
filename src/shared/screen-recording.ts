@@ -31,21 +31,34 @@ export async function startRecording(target: Target): Promise<void> {
   }
 }
 
-/** Stops recording `target` and hands the MP4 to `onChunk` piece by piece. */
-export async function readRecording(
-  target: Target,
-  onChunk: (data: string, base64: boolean) => void,
-): Promise<void> {
+/**
+ * Stops recording `target` and returns the stream handle of its MP4, to read
+ * with `readRecording`. Detaches if there's no video to read.
+ */
+export async function stopRecording(target: Target): Promise<string> {
   try {
     // SAFETY: Page.stopScreenRecording returns `{ stream?: IO.StreamHandle }`.
     const result = (await browser.debugger.sendCommand(target, 'Page.stopScreenRecording')) as
       | StreamResult
       | undefined;
 
-    const handle = result?.stream;
+    if (!result?.stream) throw new Error('Chrome returned no video.');
 
-    if (!handle) throw new Error('Chrome returned no video.');
+    return result.stream;
+  } catch (cause) {
+    await discardRecording(target);
 
+    throw cause;
+  }
+}
+
+/** Hands a stopped recording's MP4 to `onChunk` piece by piece, then detaches. */
+export async function readRecording(
+  target: Target,
+  handle: string,
+  onChunk: (data: string, base64: boolean) => void,
+): Promise<void> {
+  try {
     for (;;) {
       // SAFETY: IO.read returns `{ data, base64Encoded?, eof }`.
       const chunk = (await browser.debugger.sendCommand(target, 'IO.read', {

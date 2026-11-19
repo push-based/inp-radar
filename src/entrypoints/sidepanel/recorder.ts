@@ -1,5 +1,6 @@
 import {
   RECORDING_PORT,
+  type DetachReason,
   type RecorderReply,
   type RecorderRequest,
   type VideoName,
@@ -72,12 +73,10 @@ export interface StopResult {
 /** What happened to a "Page + panel" recording while nobody was stopping it. */
 export interface RecordingEvents {
   /** Chrome detached one of the videos: its tab closed, or the user dismissed the debugging bar. */
-  onLost: (video: VideoName, reason: LostReply['reason']) => void;
+  onLost: (video: VideoName, reason: DetachReason) => void;
   /** The background script went away, and the recording with it. */
   onDropped: () => void;
 }
-
-type LostReply = Extract<RecorderReply, { type: 'lost' }>;
 
 /** A "Page + panel" recording, run by the background script. */
 export class NativeRecording {

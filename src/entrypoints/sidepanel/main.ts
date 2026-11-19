@@ -1,11 +1,9 @@
 import './fonts.css';
 import { describeError } from '@/shared/errors';
 import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/shared/protocol';
-import type { VideoName } from '@/shared/recording';
+import type { DetachReason, VideoName } from '@/shared/recording';
 
-type DetachReason = `${Browser.debugger.DetachReason}`;
-
-import { zipRecording, type RecordingFile } from './archive';
+import { fitsInZip, zipRecording, type RecordingFile } from './archive';
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
 import { createPulse } from './pulse';
@@ -260,30 +258,14 @@ function lostCause(video: VideoName, reason: DetachReason) {
 function onLost(video: VideoName, reason: DetachReason) {
   if (recording?.mode !== 'native') return;
 
-  const current = recording;
   const other: VideoName = video === 'page' ? 'panel' : 'page';
+  const cause = lostCause(video, reason);
 
-  endRecording();
-  recordButton.disabled = true;
-  renderRecording('Saving…');
-  void (async () => {
-    try {
-      const { files } = await current.session.stop([other]).catch(() => ({ files: [] }));
-
-      if (files.length > 0) await save(current.host, files);
-
-      showMessage(
-        files.length > 0
-          ? `${lostCause(video, reason)}, so only the ${other} video was saved.`
-          : `${lostCause(video, reason)}. Nothing was saved.`,
-      );
-    } catch (cause) {
-      fail(cause);
-    } finally {
-      recordButton.disabled = false;
-      renderRecording();
-    }
-  })();
+  void stop({
+    videos: [other],
+    explain: (saved) =>
+      saved ? `${cause}, so only the ${other} video was saved.` : `${cause}. Nothing was saved.`,
+  });
 }
 
 // The background script went away mid-recording, taking the recording with it.
@@ -295,20 +277,36 @@ function onDropped() {
   showMessage('Recording stopped unexpectedly. Nothing was saved.');
 }
 
-async function save(host: string, files: RecordingFile[]) {
-  const link = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
-
-  link.href = URL.createObjectURL(await zipRecording(files));
-  link.download = `inp-radar-${host}-${stamp}.zip`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+/**
+ * How a recording ends: which "Page + panel" videos are still there to save,
+ * and, when it ended on its own, what to tell the user about it.
+ */
+interface Ending {
+  videos: VideoName[];
+  explain?: (saved: boolean) => string;
 }
 
-async function finishRecording(current: Recording) {
+/** Ends the recording, saves what it recorded and resets the controls. */
+async function stop(ending: Ending = { videos: ['page', 'panel'] }) {
+  const current = recording;
+
+  if (!current) return;
+
   endRecording();
+  recordButton.disabled = true;
   renderRecording('Saving…');
 
+  try {
+    await finishRecording(current, ending);
+  } catch (cause) {
+    fail(cause);
+  } finally {
+    recordButton.disabled = false;
+    renderRecording();
+  }
+}
+
+async function finishRecording(current: Recording, { videos, explain }: Ending) {
   if (current.mode === 'window') {
     const video = await stopWindowRecording(current.capture);
     const extension = video.type.startsWith('video/webm') ? 'webm' : 'mp4';
@@ -319,13 +317,51 @@ async function finishRecording(current: Recording) {
   }
 
   // One video failing doesn't throw away the other.
-  const { files, failures } = await current.session.stop(['page', 'panel']);
+  const { files, failures } = await current.session.stop(videos);
+
+  if (files.length > 0) await save(current.host, files);
+
+  if (explain) {
+    showMessage(explain(files.length > 0));
+
+    return;
+  }
 
   if (files.length === 0) throw new Error(failures.join('; '));
 
-  await save(current.host, files);
-
   if (failures.length > 0) showMessage(`Saved without ${failures.join('; ')}`);
+}
+
+async function save(host: string, files: RecordingFile[]) {
+  const base = `inp-radar-${host.replaceAll(/[^\w.-]+/g, '-')}-${localStamp(new Date())}`;
+
+  if (fitsInZip(files)) {
+    download(await zipRecording(files), `${base}.zip`);
+
+    return;
+  }
+
+  // Too large for a plain zip: each file on its own instead.
+  for (const { name, file } of files) download(file, `${base}-${name}`);
+}
+
+function download(file: Blob, name: string) {
+  const link = document.createElement('a');
+
+  link.href = URL.createObjectURL(file);
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+}
+
+/** `2026-11-19T18-08-10` in local time, safe in a file name. */
+function localStamp(now: Date) {
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  return (
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
+    `T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
+  );
 }
 
 async function beginRecording(mode: RecordMode, id: number) {
@@ -352,25 +388,14 @@ async function beginRecording(mode: RecordMode, id: number) {
   recordingTimer = setInterval(() => renderRecording(), 500);
 }
 
-async function stop() {
-  if (!recording) return;
-
-  recordButton.disabled = true;
-
-  try {
-    await finishRecording(recording);
-  } catch (cause) {
-    fail(cause);
-  } finally {
-    recordButton.disabled = false;
-    renderRecording();
-  }
-}
-
 // Catch boundary: whatever was thrown is shown under the controls.
 function fail(cause: unknown) {
-  // Cancelling the share dialog isn't a failure.
-  if (cause instanceof DOMException && cause.name === 'NotAllowedError') return;
+  // A cancelled share dialog and a policy or permission block look the same.
+  if (cause instanceof DOMException && cause.name === 'NotAllowedError') {
+    showMessage("Screen sharing was cancelled or isn't allowed.");
+
+    return;
+  }
 
   console.error(cause);
   showMessage(`Recording failed: ${describeError(cause)}`);

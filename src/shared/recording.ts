@@ -13,6 +13,9 @@ export const RECORDING_PORT = 'inp-radar-recording';
 
 export type VideoName = 'page' | 'panel';
 
+/** Why Chrome detached a target, as `chrome.debugger.onDetach` reports it. */
+export type DetachReason = `${Browser.debugger.DetachReason}`;
+
 export type RecorderRequest =
   | { type: 'start'; page: Browser.debugger.Debuggee; panel: Browser.debugger.Debuggee }
   /** Stops these videos and streams them back, one after the other. */
@@ -31,4 +34,4 @@ export type RecorderReply =
    * or can't be recorded any more, `canceled_by_user` when the user dismissed
    * the debugging bar.
    */
-  | { type: 'lost'; video: VideoName; reason: `${Browser.debugger.DetachReason}` };
+  | { type: 'lost'; video: VideoName; reason: DetachReason };
