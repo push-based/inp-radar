@@ -67,7 +67,5 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: inp-radar-chrome
-          path: .output/*-chrome.zip
-          # .output starts with a dot, which upload-artifact skips by default.
-          include-hidden-files: true
+          path: dist/*-chrome.zip
           if-no-files-found: error

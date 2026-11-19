@@ -5,7 +5,7 @@ import { chromium, test as base, type BrowserContext, type Page } from '@playwri
 
 import { PAGE, SITE } from './test-page';
 
-const EXTENSION_PATH = path.resolve(import.meta.dirname, '../.output/chrome-mv3');
+const EXTENSION_PATH = path.resolve(import.meta.dirname, '../dist/chrome-mv3');
 
 interface Fixtures {
   context: BrowserContext;

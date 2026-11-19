@@ -165,7 +165,7 @@ Built with [WXT](https://wxt.dev) and vanilla TypeScript.
 ```bash
 pnpm install
 pnpm dev        # launches Chrome with the extension loaded, hot reloading
-pnpm build      # production build in .output/chrome-mv3
+pnpm build      # production build in dist/chrome-mv3
 pnpm compile    # type-check
 pnpm test       # unit tests (Vitest); `pnpm test:watch` to re-run on change
 pnpm e2e        # build, then run the Playwright end-to-end tests
@@ -186,7 +186,7 @@ which uses the same setup and clicks the test page on a fixed schedule. Joining
 the GIF frames needs Python 3 with Pillow.
 
 To load a build manually, open `chrome://extensions`, enable Developer mode,
-click **Load unpacked** and pick `.output/chrome-mv3`. Click the toolbar icon to
+click **Load unpacked** and pick `dist/chrome-mv3`. Click the toolbar icon to
 open the side panel.
 
 ### Publishing

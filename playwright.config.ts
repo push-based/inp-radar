@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// The tests load the production build from .output/chrome-mv3, so run
+// The tests load the production build from dist/chrome-mv3, so run
 // `pnpm build` first (`pnpm e2e` does both).
 export default defineConfig({
   testDir: 'e2e',

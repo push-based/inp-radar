@@ -20,7 +20,7 @@ import { chromium, type Page } from '@playwright/test';
 import { SPEED as SWEEP } from '../../src/entrypoints/sidepanel/meter.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
-const EXTENSION_PATH = path.join(ROOT, '.output/chrome-mv3');
+const EXTENSION_PATH = path.join(ROOT, 'dist/chrome-mv3');
 const OUT = path.join(ROOT, 'store');
 
 /** Origin the demo page is served from. Requests to it never leave Playwright. */

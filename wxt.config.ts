@@ -3,6 +3,8 @@ import { defineConfig } from 'wxt';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   srcDir: 'src',
+  // Builds land in dist/<browser>-mv<version>, e.g. dist/chrome-mv3.
+  outDir: 'dist',
   manifest: {
     name: 'INP Radar',
     description:
