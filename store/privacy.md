@@ -20,7 +20,7 @@ The extension's whole interface is a side panel. It sits next to the page it mea
 **debugger**
 
 ```text
-Used only when the user clicks Record in the side panel. The extension attaches to the measured tab and calls Chrome's built-in tab recorder (Page.startScreenRecording), then downloads the video to the user's computer when they click Stop. It sends no other debugger commands, doesn't read or change the page, and detaches as soon as the recording stops.
+Used only when the user clicks Record in the side panel. The extension attaches to the measured tab and to its own side panel and calls Chrome's built-in recorder (Page.startScreenRecording) on each, then downloads the two videos to the user's computer when they click Stop. It sends no other debugger commands, doesn't read or change the page, and detaches as soon as the recording stops.
 ```
 
 **Host permission** (the content script matches `<all_urls>`)
