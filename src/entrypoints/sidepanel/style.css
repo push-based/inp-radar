@@ -219,6 +219,18 @@ h2 {
 .status #record[hidden] {
   display: none;
 }
+.status #record-mode {
+  background: transparent;
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-md);
+  color: var(--fg);
+  flex: none;
+  font: inherit;
+  padding: var(--space-1) var(--space-2);
+}
+.status #record-mode:disabled {
+  opacity: 0.6;
+}
 
 /* Status bar and credit stay put; in a short panel main scrolls between them. */
 main {

@@ -158,3 +158,27 @@ test('records the tab and the panel to two MP4s', async ({ page, openPanel }) =>
     expect.stringMatching(/^inp-radar-inp-radar\.test-.+-panel\.mp4$/),
   ]);
 });
+
+test('records the whole window to one video', async ({ page, openPanel }) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await panel.locator('#record-mode').selectOption('window');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await expect(panel.locator('#record-mode')).toBeDisabled();
+  await page.waitForTimeout(1000);
+
+  const download = panel.waitForEvent('download');
+
+  await record.click();
+
+  expect((await download).suggestedFilename()).toMatch(
+    /^inp-radar-inp-radar\.test-.+-window\.(mp4|webm)$/,
+  );
+  await expect(record).toHaveText('Record');
+  await panel.reload();
+  await expect(panel.locator('#record-mode')).toHaveValue('window');
+});

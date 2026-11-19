@@ -107,3 +107,65 @@ export async function discardRecording(target: Target): Promise<void> {
 function toByte(character: string): number {
   return character.charCodeAt(0);
 }
+
+/** Chrome's extra `getDisplayMedia` hints, not yet in TypeScript's DOM types. */
+interface ChromeDisplayMediaOptions extends DisplayMediaStreamOptions {
+  selfBrowserSurface?: 'include' | 'exclude';
+}
+
+export interface WindowRecording {
+  stream: MediaStream;
+  recorder: MediaRecorder;
+  chunks: Blob[];
+}
+
+/**
+ * Records a window the user picks in Chrome's share dialog, meant for the
+ * Chrome window itself: page, side panel and tab bar in one video. Uses
+ * `MediaRecorder` (VP9 WebM, falling back to what the browser has), since the
+ * native recorder only sees one page. `onEnded` runs if sharing is stopped
+ * from Chrome's own "Stop sharing" button.
+ *
+ * VP9 WebM first: Chrome's software H.264 and AV1 MediaRecorder paths
+ * produced corrupt frames for window captures in testing; VP9 decoded cleanly.
+ */
+export async function startWindowRecording(onEnded: () => void): Promise<WindowRecording> {
+  const options: ChromeDisplayMediaOptions = {
+    video: { displaySurface: 'window', frameRate: 60 },
+    audio: false,
+    selfBrowserSurface: 'include',
+  };
+
+  const stream = await navigator.mediaDevices.getDisplayMedia(options);
+
+  const mimeType = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'].find((type) =>
+    MediaRecorder.isTypeSupported(type),
+  );
+
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
+  const chunks: Blob[] = [];
+
+  recorder.addEventListener('dataavailable', (event) => chunks.push(event.data));
+  stream.getVideoTracks()[0]?.addEventListener('ended', onEnded, { once: true });
+  recorder.start(1000);
+
+  return { stream, recorder, chunks };
+}
+
+export async function stopWindowRecording(recording: WindowRecording): Promise<Blob> {
+  const { stream, recorder, chunks } = recording;
+
+  // MediaRecorder stops by itself once sharing has ended.
+  if (recorder.state !== 'inactive') {
+    const stopped = new Promise((resolve) =>
+      recorder.addEventListener('stop', resolve, { once: true }),
+    );
+
+    recorder.stop();
+    await stopped;
+  }
+
+  for (const track of stream.getTracks()) track.stop();
+
+  return new Blob(chunks, { type: recorder.mimeType });
+}

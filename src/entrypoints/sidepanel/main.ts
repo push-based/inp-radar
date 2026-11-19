@@ -10,8 +10,11 @@ import {
   panelTarget,
   recordingSupported,
   startRecording,
+  startWindowRecording,
   stopRecording,
+  stopWindowRecording,
   type Target,
+  type WindowRecording,
 } from './recorder';
 
 const MAX_RETRIES = 10;
@@ -199,10 +202,21 @@ $('reload').addEventListener('click', () => {
   if (tabId !== undefined) browser.tabs.reload(tabId);
 });
 
-// --- Optional recording of the measured tab and this panel -----------------
+// --- Optional recording ------------------------------------------------------
+//
+// "Page + panel": Chrome's native recorder, two separate AV1 videos.
+// "Whole window": the Chrome window picked in the share dialog, one video.
 
+type RecordMode = 'native' | 'window';
+
+type Recording =
+  | { mode: 'native'; page: Target; panel: Target }
+  | { mode: 'window'; capture: WindowRecording };
+
+const MODE_KEY = 'inp-radar:record-mode';
 const recordButton = $('record', HTMLButtonElement);
-let recording: { page: Target; panel: Target } | undefined;
+const modeSelect = $('record-mode', HTMLSelectElement);
+let recording: Recording | undefined;
 let recordingStart = 0;
 let recordingTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -212,6 +226,7 @@ function renderRecording(label?: string) {
 
   recordButton.dataset.recording = String(recording !== undefined);
   recordButton.textContent = label ?? (recording ? `Stop ${time}` : 'Record');
+  modeSelect.disabled = recording !== undefined;
 }
 
 function endRecording() {
@@ -223,7 +238,7 @@ function endRecording() {
 // The tab was closed, or the user dismissed Chrome's debugging bar: the
 // recording can't be finished, so drop the other half too.
 function onDetach(source: Target) {
-  if (!recording) return;
+  if (recording?.mode !== 'native') return;
 
   const { page, panel } = recording;
   const isPage = source.tabId !== undefined && source.tabId === page.tabId;
@@ -235,61 +250,127 @@ function onDetach(source: Target) {
   renderRecording();
 }
 
-function download(video: Blob, name: string) {
+function download(video: Blob, suffix: string) {
   const link = document.createElement('a');
+  const host = pageUrl.split('/')[0] || 'page';
+  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
+  const extension = video.type.startsWith('video/webm') ? 'webm' : 'mp4';
 
   link.href = URL.createObjectURL(video);
-  link.download = name;
+  link.download = `inp-radar-${host}-${stamp}-${suffix}.${extension}`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
 }
 
-async function finishRecording(page: Target, panel: Target) {
+async function finishRecording(current: Recording) {
   endRecording();
   renderRecording('Saving…');
 
-  const [pageVideo, panelVideo] = await Promise.all([stopRecording(page), stopRecording(panel)]);
-  const host = pageUrl.split('/')[0] || 'page';
-  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
+  if (current.mode === 'window') {
+    download(await stopWindowRecording(current.capture), 'window');
 
-  download(pageVideo, `inp-radar-${host}-${stamp}-page.mp4`);
-  download(panelVideo, `inp-radar-${host}-${stamp}-panel.mp4`);
-}
-
-async function beginRecording(id: number) {
-  const page: Target = { tabId: id };
-  const panel = await panelTarget();
-
-  await startRecording(page);
-
-  try {
-    await startRecording(panel);
-  } catch (error) {
-    await discardRecording(page);
-
-    throw error;
+    return;
   }
 
-  browser.debugger.onDetach.addListener(onDetach);
-  recording = { page, panel };
+  const [pageVideo, panelVideo] = await Promise.all([
+    stopRecording(current.page),
+    stopRecording(current.panel),
+  ]);
+
+  download(pageVideo, 'page');
+  download(panelVideo, 'panel');
+}
+
+async function beginRecording(mode: RecordMode, id: number) {
+  if (mode === 'window') {
+    const capture = await startWindowRecording(() => {
+      if (recording?.mode === 'window' && recording.capture === capture) void stop();
+    });
+
+    recording = { mode, capture };
+  } else {
+    const page: Target = { tabId: id };
+    const panel = await panelTarget();
+
+    await startRecording(page);
+
+    try {
+      await startRecording(panel);
+    } catch (error) {
+      await discardRecording(page);
+
+      throw error;
+    }
+
+    browser.debugger.onDetach.addListener(onDetach);
+    recording = { mode, page, panel };
+  }
+
   recordingStart = Date.now();
   recordingTimer = setInterval(() => renderRecording(), 500);
 }
 
-recordButton.hidden = !recordingSupported(navigator.userAgent);
+async function stop() {
+  if (!recording) return;
 
-recordButton.addEventListener('click', async () => {
   recordButton.disabled = true;
 
   try {
-    if (recording) await finishRecording(recording.page, recording.panel);
-    else if (tabId !== undefined) await beginRecording(tabId);
-
+    await finishRecording(recording);
     renderRecording();
   } catch (error) {
-    console.error(error);
-    recordButton.title = error instanceof Error ? error.message : String(error);
-    renderRecording('Record failed');
+    fail(error);
+  } finally {
+    recordButton.disabled = false;
+  }
+}
+
+// Catch boundary: whatever was thrown is shown on the button.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
+function fail(error: unknown) {
+  console.error(error);
+  recordButton.title = error instanceof Error ? error.message : String(error);
+  renderRecording('Record failed');
+}
+
+function readMode(): RecordMode {
+  return modeSelect.value === 'window' ? 'window' : 'native';
+}
+
+try {
+  modeSelect.value = localStorage.getItem(MODE_KEY) === 'window' ? 'window' : 'native';
+} catch {
+  // Storage is only a convenience.
+}
+
+modeSelect.addEventListener('change', () => {
+  try {
+    localStorage.setItem(MODE_KEY, readMode());
+  } catch {
+    // Storage is only a convenience.
+  }
+});
+
+recordButton.hidden = !recordingSupported(navigator.userAgent);
+
+modeSelect.hidden = recordButton.hidden;
+
+recordButton.addEventListener('click', async () => {
+  if (recording) {
+    await stop();
+
+    return;
+  }
+
+  if (tabId === undefined) return;
+
+  recordButton.disabled = true;
+
+  try {
+    await beginRecording(readMode(), tabId);
+    renderRecording();
+  } catch (error) {
+    fail(error);
   } finally {
     recordButton.disabled = false;
   }

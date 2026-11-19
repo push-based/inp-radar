@@ -11,11 +11,20 @@
       <span class="status-dot"></span>
       <span class="status-text" id="status-text">Connecting…</span>
       <button id="reload" type="button" hidden>Reload page</button>
+      <select
+        id="record-mode"
+        aria-label="What to record"
+        title="Page + panel: Chrome's native recorder, two videos. Whole window: pick the Chrome window in the share dialog, one video."
+        hidden
+      >
+        <option value="native">Page + panel</option>
+        <option value="window">Whole window</option>
+      </select>
       <button
         id="record"
         type="button"
         data-recording="false"
-        title="Record a video of this tab and of this panel (Chrome 153+)"
+        title="Start recording (Chrome 153+)"
         hidden
       >
         Record

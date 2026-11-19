@@ -93,17 +93,21 @@ ships, the DevTools trace is where you find the culprit.
 
 ## Recording the tab
 
-In Chrome 153 and later, the panel header has a **Record** button. It records
-the measured tab and the side panel at the same time, as two separate videos,
-with Chrome's native recorder (`Page.startScreenRecording`, through
-`chrome.debugger`). **Stop** downloads them as
-`inp-radar-<host>-<time>-page.mp4` and `inp-radar-<host>-<time>-panel.mp4`
-(AV1, 60 fps), ready to put side by side. Chrome takes the frames from each
-compositor and encodes them out of process, so recording doesn't add work to
-the page's main thread.
+In Chrome 153 and later, the panel header has a **Record** button, with a
+choice of what to record:
 
-While it records, Chrome shows a "started debugging this browser" bar.
-Dismissing that bar stops the recording without saving.
+- **Page + panel** records the measured tab and the side panel at the same
+  time, as two separate videos, with Chrome's native recorder
+  (`Page.startScreenRecording`, through `chrome.debugger`). **Stop** downloads
+  `inp-radar-<host>-<time>-page.mp4` and `inp-radar-<host>-<time>-panel.mp4`
+  (AV1, 60 fps). Chrome takes the frames from each compositor and encodes them
+  out of process, so recording doesn't add work to the page's main thread.
+  While it records, Chrome shows a "started debugging this browser" bar;
+  dismissing that bar stops the recording without saving.
+- **Whole window** records page and panel in one video: Chrome's share dialog
+  opens, you pick the Chrome window, and **Stop** (or Chrome's **Stop sharing**)
+  downloads `inp-radar-<host>-<time>-window.webm` (VP9). This uses
+  `getDisplayMedia` and `MediaRecorder`, not the native recorder.
 
 ## How it works
 

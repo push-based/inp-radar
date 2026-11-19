@@ -26,7 +26,13 @@ export const test = base.extend<Fixtures>({
 
     const context = await chromium.launchPersistentContext('', {
       channel: 'chromium',
-      args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
+      args: [
+        `--disable-extensions-except=${EXTENSION_PATH}`,
+        `--load-extension=${EXTENSION_PATH}`,
+        // Answers the share dialog of "Whole window" recording with the test
+        // page's tab, since a headless browser has no windows to pick.
+        '--auto-select-tab-capture-source-by-title=INP Radar test page',
+      ],
     });
 
     await context.route(`${SITE}/**`, (route) =>

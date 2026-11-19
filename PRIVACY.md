@@ -19,9 +19,10 @@ It doesn't read which key was pressed, form values or page text, and it doesn't
 change the page.
 
 If you click **Record**, Chrome's built-in recorder captures a video of the
-tab you are measuring, and one of the side panel, until you click **Stop**.
-The videos are saved to your downloads folder. The extension doesn't look at
-them, keep them or send them anywhere.
+tab you are measuring, and one of the side panel, until you click **Stop**. In
+**Whole window** mode, it instead records the window you pick in Chrome's share
+dialog. The videos are saved to your downloads folder. The extension doesn't
+look at them, keep them or send them anywhere.
 
 ## Where it goes
 
