@@ -91,6 +91,18 @@ The panel shows when the main thread is blocked, not which script blocked it.
 Script attribution, using the Long Animation Frames API, is planned. Until it
 ships, the DevTools trace is where you find the culprit.
 
+## Recording the tab
+
+In Chrome 153 and later, the panel header has a **Record** button. It records a
+video of the measured tab with Chrome's native tab recorder
+(`Page.startScreenRecording`, through `chrome.debugger`), and **Stop** downloads
+it as `inp-radar-<host>-<time>.mp4` (AV1, 60 fps). Chrome takes the frames from
+the tab's compositor and encodes them out of process, so recording doesn't add
+work to the page's main thread.
+
+While it records, Chrome shows a "started debugging this browser" bar.
+Dismissing that bar stops the recording without saving.
+
 ## How it works
 
 ```

@@ -5,6 +5,7 @@ import { createEventLog } from './event-log';
 import type { Meter } from './meter';
 import { createPulse } from './pulse';
 import { createRadar } from './radar';
+import { recordingSupported, startRecording, stopRecording } from './recorder';
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY = 300;
@@ -189,6 +190,78 @@ browser.tabs.onUpdated.addListener((id, info) => {
 
 $('reload').addEventListener('click', () => {
   if (tabId !== undefined) browser.tabs.reload(tabId);
+});
+
+// --- Optional recording of the measured tab --------------------------------
+
+const recordButton = $('record', HTMLButtonElement);
+let recordingTabId: number | undefined;
+let recordingStart = 0;
+let recordingTimer: ReturnType<typeof setInterval> | undefined;
+
+function renderRecording(label?: string) {
+  const recording = recordingTabId !== undefined;
+  const seconds = Math.floor((Date.now() - recordingStart) / 1000);
+  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+  recordButton.dataset.recording = String(recording);
+  recordButton.textContent = label ?? (recording ? `Stop ${time}` : 'Record');
+}
+
+// The tab was closed, or the user dismissed Chrome's debugging bar.
+function onDetach(source: Browser.debugger.Debuggee) {
+  if (source.tabId !== recordingTabId) return;
+
+  recordingTabId = undefined;
+  clearInterval(recordingTimer);
+  renderRecording();
+}
+
+async function finishRecording(id: number) {
+  recordingTabId = undefined;
+  clearInterval(recordingTimer);
+  browser.debugger.onDetach.removeListener(onDetach);
+  renderRecording('Saving…');
+
+  const video = await stopRecording(id);
+  const link = document.createElement('a');
+  const host = pageUrl.split('/')[0] || 'page';
+  const stamp = new Date().toISOString().slice(0, 19).replaceAll(':', '-');
+
+  link.href = URL.createObjectURL(video);
+  link.download = `inp-radar-${host}-${stamp}.mp4`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+}
+
+recordButton.hidden = !recordingSupported(navigator.userAgent);
+
+recordButton.addEventListener('click', async () => {
+  const id = recordingTabId ?? tabId;
+
+  if (id === undefined) return;
+
+  recordButton.disabled = true;
+
+  try {
+    if (recordingTabId !== undefined) {
+      await finishRecording(id);
+    } else {
+      await startRecording(id);
+      browser.debugger.onDetach.addListener(onDetach);
+      recordingTabId = id;
+      recordingStart = Date.now();
+      recordingTimer = setInterval(() => renderRecording(), 500);
+    }
+
+    renderRecording();
+  } catch (error) {
+    console.error(error);
+    recordButton.title = error instanceof Error ? error.message : String(error);
+    renderRecording('Record failed');
+  } finally {
+    recordButton.disabled = false;
+  }
 });
 
 connectToActiveTab();

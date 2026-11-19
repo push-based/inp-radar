@@ -136,3 +136,21 @@ test('says when a page cannot be measured', async ({ page, openPanel }) => {
   });
   await expect(panel.locator('#reload')).toBeVisible();
 });
+
+test('records the tab to an MP4', async ({ page, openPanel }) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await page.waitForTimeout(1000);
+
+  const download = panel.waitForEvent('download');
+
+  await record.click();
+
+  expect((await download).suggestedFilename()).toMatch(/^inp-radar-inp-radar\.test-.+\.mp4$/);
+  await expect(record).toHaveText('Record');
+});

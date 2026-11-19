@@ -17,6 +17,12 @@ INP Radar measures how responsive the page in the active tab is and shows it in 
 The extension's whole interface is a side panel. It sits next to the page it measures, and because it renders in its own process, it keeps animating while the page's main thread is blocked. That's what lets it show the block as it happens.
 ```
 
+**debugger**
+
+```text
+Used only when the user clicks Record in the side panel. The extension attaches to the measured tab and calls Chrome's built-in tab recorder (Page.startScreenRecording), then downloads the video to the user's computer when they click Stop. It sends no other debugger commands, doesn't read or change the page, and detaches as soon as the recording stops.
+```
+
 **Host permission** (the content script matches `<all_urls>`)
 
 ```text
@@ -42,7 +48,9 @@ Left unticked, with the reason:
 - **Web history:** the panel shows the current tab's URL, but the extension
   keeps no list of visited pages.
 - **Website content:** the target selector names an element (such as
-  `button#cheap`), not its text or media.
+  `button#cheap`), not its text or media. A tab recording, made only when the
+  user clicks Record, goes straight to the user's downloads and is never
+  read by the extension.
 - Everything else (personally identifiable, health, financial, authentication,
   personal communications, location): never touched.
 

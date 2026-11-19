@@ -187,6 +187,38 @@ h2 {
 .status button:hover {
   background: var(--accent-hover);
 }
+/* Record is secondary to the status: outlined, with a record dot. */
+.status #record {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--grid);
+  color: var(--fg);
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+  gap: var(--space-1);
+}
+.status #record::before {
+  background: var(--color-secondary-600);
+  border-radius: var(--radius-full);
+  content: '';
+  height: var(--space-2);
+  width: var(--space-2);
+}
+.status #record:hover {
+  border-color: var(--color-secondary-600);
+}
+.status #record[data-recording='true'] {
+  background: var(--color-secondary-600);
+  border-color: var(--color-secondary-600);
+  color: var(--color-neutral-25);
+}
+.status #record[data-recording='true']::before {
+  background: currentColor;
+  border-radius: var(--radius-sm);
+}
+.status #record[hidden] {
+  display: none;
+}
 
 /* Status bar and credit stay put; in a short panel main scrolls between them. */
 main {

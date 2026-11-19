@@ -10,7 +10,9 @@ export default defineConfig({
     homepage_url: 'https://github.com/push-based/inp-radar',
     // chrome.sidePanel shipped in Chrome 114.
     minimum_chrome_version: '114',
-    permissions: ['sidePanel'],
+    // debugger: the Record button drives Chrome's native tab recorder
+    // (Page.startScreenRecording). Chrome doesn't allow it as optional.
+    permissions: ['sidePanel', 'debugger'],
     action: {
       default_title: 'Open INP Radar',
     },
