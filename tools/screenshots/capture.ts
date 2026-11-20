@@ -17,7 +17,7 @@ import { PAGE, SITE } from '../../e2e/test-page.ts';
 import { SPEED as SWEEP } from '../../src/entrypoints/sidepanel/meter.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
-const EXTENSION_PATH = path.join(ROOT, '.output/chrome-mv3');
+const EXTENSION_PATH = path.join(ROOT, 'dist/chrome-mv3');
 const OUT = path.join(ROOT, 'docs/screenshots');
 
 // Wide enough for the two-column layout (25rem), about as wide as Chrome

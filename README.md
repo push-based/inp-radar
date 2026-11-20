@@ -91,6 +91,28 @@ The panel shows when the main thread is blocked, not which script blocked it.
 Script attribution, using the Long Animation Frames API, is planned. Until it
 ships, the DevTools trace is where you find the culprit.
 
+## Recording the tab
+
+In Chrome 153 and later, the panel header has a **Record** button, with a
+choice of what to record:
+
+- **Page + panel** records the measured tab and the side panel at the same
+  time, as two separate videos, with Chrome's native recorder
+  (`Page.startScreenRecording`, through `chrome.debugger`). Chrome takes the
+  frames from each compositor and encodes them out of process, so recording
+  doesn't add work to the page's main thread. While it records, Chrome shows a
+  "started debugging this browser" bar; dismissing it stops the recording
+  without saving. If the recorded tab is closed, the panel video is still
+  saved.
+- **Whole window** records page and panel in one video: Chrome's share dialog
+  opens and you pick the Chrome window. This uses `getDisplayMedia` and
+  `MediaRecorder` (VP9), not the native recorder. Chrome's **Stop sharing**
+  button also stops and saves.
+
+**Stop** downloads one `inp-radar-<host>-<time>.zip` with the videos inside
+(`page.mp4` and `panel.mp4`, or `window.webm`), stored without recompressing.
+Closing the panel while recording stops the recording without saving.
+
 ## How it works
 
 ```
@@ -108,6 +130,11 @@ ships, the DevTools trace is where you find the culprit.
 - `src/entrypoints/sidepanel/` connects to the active tab with `tabs.connect`,
   follows tab switches and navigations, and renders.
 - `src/shared/protocol.ts` defines the messages between the two.
+- Recording: the panel asks `src/entrypoints/background.ts` to run Chrome's
+  native recorder over `chrome.debugger` (`src/shared/screen-recording.ts`),
+  over the port described in `src/shared/recording.ts`. The background script
+  owns the debugger sessions, so it can detach when the panel closes.
+  `sidepanel/archive.ts` zips the videos.
 
 ### The radar
 
@@ -151,7 +178,7 @@ Built with [WXT](https://wxt.dev) and vanilla TypeScript.
 ```bash
 pnpm install
 pnpm dev        # launches Chrome with the extension loaded, hot reloading
-pnpm build      # production build in .output/chrome-mv3
+pnpm build      # production build in dist/chrome-mv3
 pnpm compile    # type-check
 pnpm test       # unit tests (Vitest); `pnpm test:watch` to re-run on change
 pnpm e2e        # build, then run the Playwright end-to-end tests
@@ -172,7 +199,7 @@ which uses the same setup and clicks the test page on a fixed schedule. Joining
 the GIF frames needs Python 3 with Pillow.
 
 To load a build manually, open `chrome://extensions`, enable Developer mode,
-click **Load unpacked** and pick `.output/chrome-mv3`. Click the toolbar icon to
+click **Load unpacked** and pick `dist/chrome-mv3`. Click the toolbar icon to
 open the side panel.
 
 ### Publishing

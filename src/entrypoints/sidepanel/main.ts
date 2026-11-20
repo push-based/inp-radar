@@ -1,10 +1,21 @@
 import './fonts.css';
+import { describeError } from '@/shared/errors';
 import { PORT_NAME, type InpSnapshot, type PageMessage } from '@/shared/protocol';
+import type { DetachReason, VideoName } from '@/shared/recording';
 
+import { fitsInZip, zipRecording, type RecordingFile } from './archive';
 import { createEventLog } from './event-log';
 import type { Meter } from './meter';
 import { createPulse } from './pulse';
 import { createRadar } from './radar';
+import {
+  NativeRecording,
+  panelTarget,
+  recordingSupported,
+  startWindowRecording,
+  stopWindowRecording,
+  type WindowRecording,
+} from './recorder';
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY = 300;
@@ -86,6 +97,7 @@ function handle(message: PageMessage) {
       pageUrl = describe(message.url);
       renderInp(message.inp);
       log.reset(message.events);
+
       setStatus(message.visible ? 'connected' : 'hidden', pageUrl);
       break;
     case 'beat':
@@ -129,6 +141,7 @@ function connect(id: number | undefined) {
   log.reset();
 
   tabId = id;
+  pageUrl = '';
 
   if (id === undefined) return;
   setStatus('connecting', 'Connecting…');
@@ -189,6 +202,253 @@ browser.tabs.onUpdated.addListener((id, info) => {
 
 $('reload').addEventListener('click', () => {
   if (tabId !== undefined) browser.tabs.reload(tabId);
+});
+
+// --- Optional recording ------------------------------------------------------
+//
+// "Page + panel": Chrome's native recorder, two separate AV1 videos.
+// "Whole window": the Chrome window picked in the share dialog, one video.
+// Stop downloads one zip with the video(s) inside.
+
+type RecordMode = 'native' | 'window';
+
+type Recording =
+  | { mode: 'native'; host: string; session: NativeRecording }
+  | { mode: 'window'; host: string; capture: WindowRecording };
+
+const MODE_KEY = 'inp-radar:record-mode';
+const recordButton = $('record', HTMLButtonElement);
+const modeSelect = $('record-mode', HTMLSelectElement);
+const recordMessage = $('record-message');
+let recording: Recording | undefined;
+let recordingStart = 0;
+let recordingTimer: ReturnType<typeof setInterval> | undefined;
+
+function renderRecording(label?: string) {
+  const seconds = Math.floor((Date.now() - recordingStart) / 1000);
+  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+  recordButton.dataset.recording = String(recording !== undefined);
+  recordButton.textContent = label ?? (recording ? `Stop ${time}` : 'Record');
+  // Locked while recording, and while one is starting or saving.
+  modeSelect.disabled = recording !== undefined || recordButton.disabled;
+}
+
+/** A line under the controls about the last recording; empty hides it. */
+function showMessage(text: string) {
+  recordMessage.textContent = text;
+  recordMessage.hidden = text === '';
+}
+
+function endRecording() {
+  recording = undefined;
+  clearInterval(recordingTimer);
+}
+
+/** Why Chrome stopped one of the videos, as shown to the user. */
+function lostCause(video: VideoName, reason: DetachReason) {
+  if (reason === 'canceled_by_user') return "Recording was cancelled from Chrome's debugging bar";
+
+  return video === 'page'
+    ? "The recorded tab was closed or can't be recorded any more"
+    : 'The panel stopped recording';
+}
+
+// Chrome detached one of the videos. Whatever still records is saved;
+// dismissing the debugging bar usually detaches both, so then nothing is left.
+function onLost(video: VideoName, reason: DetachReason) {
+  if (recording?.mode !== 'native') return;
+
+  const other: VideoName = video === 'page' ? 'panel' : 'page';
+  const cause = lostCause(video, reason);
+
+  void stop({
+    videos: [other],
+    explain: (saved) =>
+      saved ? `${cause}, so only the ${other} video was saved.` : `${cause}. Nothing was saved.`,
+  });
+}
+
+// The background script went away mid-recording, taking the recording with it.
+function onDropped() {
+  if (recording?.mode !== 'native') return;
+
+  endRecording();
+  renderRecording();
+  showMessage('Recording stopped unexpectedly. Nothing was saved.');
+}
+
+/**
+ * How a recording ends: which "Page + panel" videos are still there to save,
+ * and, when it ended on its own, what to tell the user about it.
+ */
+interface Ending {
+  videos: VideoName[];
+  explain?: (saved: boolean) => string;
+}
+
+/** Ends the recording, saves what it recorded and resets the controls. */
+async function stop(ending: Ending = { videos: ['page', 'panel'] }) {
+  const current = recording;
+
+  if (!current) return;
+
+  endRecording();
+  recordButton.disabled = true;
+  renderRecording('Saving…');
+
+  try {
+    await finishRecording(current, ending);
+  } catch (cause) {
+    fail(cause);
+  } finally {
+    recordButton.disabled = false;
+    renderRecording();
+  }
+}
+
+async function finishRecording(current: Recording, { videos, explain }: Ending) {
+  if (current.mode === 'window') {
+    const video = await stopWindowRecording(current.capture);
+    const extension = video.type.startsWith('video/webm') ? 'webm' : 'mp4';
+
+    await save(current.host, [{ name: `window.${extension}`, file: video }]);
+
+    return;
+  }
+
+  // One video failing doesn't throw away the other.
+  const { files, failures } = await current.session.stop(videos);
+
+  if (files.length > 0) await save(current.host, files);
+
+  if (explain) {
+    if (failures.length > 0) console.warn(failures.join('; '));
+
+    showMessage(explain(files.length > 0));
+
+    return;
+  }
+
+  if (files.length === 0) throw new Error(failures.join('; '));
+
+  if (failures.length > 0) showMessage(`Saved without ${failures.join('; ')}`);
+}
+
+async function save(host: string, files: RecordingFile[]) {
+  const base = `inp-radar-${host.replaceAll(/[^\w.-]+/g, '-')}-${localStamp(new Date())}`;
+
+  if (fitsInZip(files)) {
+    download(await zipRecording(files), `${base}.zip`);
+
+    return;
+  }
+
+  // Too large for a plain zip: each file on its own instead.
+  for (const { name, file } of files) download(file, `${base}-${name}`);
+}
+
+function download(file: Blob, name: string) {
+  const link = document.createElement('a');
+
+  link.href = URL.createObjectURL(file);
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+}
+
+/** `2026-11-19T18-08-10` in local time, safe in a file name. */
+function localStamp(now: Date) {
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  return (
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
+    `T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
+  );
+}
+
+async function beginRecording(mode: RecordMode, id: number) {
+  // The host now, before a tab switch or navigation can change it. Only a
+  // connected page's URL is this tab's; otherwise it may be the previous tab's.
+  const host = (connected && pageUrl.split('/')[0]) || 'page';
+
+  if (mode === 'window') {
+    const capture = await startWindowRecording(() => {
+      if (recording?.mode === 'window' && recording.capture === capture) void stop();
+    });
+
+    recording = { mode, host, capture };
+  } else {
+    const session = await NativeRecording.start({ tabId: id }, await panelTarget(), {
+      onLost,
+      onDropped,
+    });
+
+    recording = { mode, host, session };
+  }
+
+  recordingStart = Date.now();
+  recordingTimer = setInterval(() => renderRecording(), 500);
+}
+
+// Catch boundary: whatever was thrown is shown under the controls.
+function fail(cause: unknown) {
+  // A cancelled share dialog and a policy or permission block look the same.
+  if (cause instanceof DOMException && cause.name === 'NotAllowedError') {
+    showMessage("Screen sharing was cancelled or isn't allowed.");
+
+    return;
+  }
+
+  console.error(cause);
+  showMessage(`Recording failed: ${describeError(cause)}`);
+}
+
+function readMode(): RecordMode {
+  return modeSelect.value === 'window' ? 'window' : 'native';
+}
+
+try {
+  modeSelect.value = localStorage.getItem(MODE_KEY) === 'window' ? 'window' : 'native';
+} catch {
+  // Storage is only a convenience.
+}
+
+modeSelect.addEventListener('change', () => {
+  try {
+    localStorage.setItem(MODE_KEY, readMode());
+  } catch {
+    // Storage is only a convenience.
+  }
+});
+
+$('record-controls').hidden = !recordingSupported(navigator.userAgent);
+
+recordButton.addEventListener('click', async () => {
+  if (recording) {
+    await stop();
+
+    return;
+  }
+
+  if (tabId === undefined) {
+    showMessage('There is no tab to record in this window.');
+
+    return;
+  }
+
+  recordButton.disabled = true;
+  renderRecording();
+  showMessage('');
+
+  try {
+    await beginRecording(readMode(), tabId);
+  } catch (cause) {
+    fail(cause);
+  } finally {
+    recordButton.disabled = false;
+    renderRecording();
+  }
 });
 
 connectToActiveTab();

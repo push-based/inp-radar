@@ -1,6 +1,6 @@
 # INP Radar privacy policy
 
-_Last updated: 18 October 2026_
+_Last updated: 19 November 2026_
 
 INP Radar is a Chrome extension by PushBased that shows how responsive the page
 in the active tab is. This policy covers the extension and the data it handles.
@@ -17,6 +17,12 @@ interactions and frames:
 
 It doesn't read which key was pressed, form values or page text, and it doesn't
 change the page.
+
+If you click **Record**, Chrome's built-in recorder captures a video of the
+tab you are measuring, and one of the side panel, until you click **Stop**. In
+**Whole window** mode, it instead records the window you pick in Chrome's share
+dialog. The videos are saved, in one zip file, to your downloads folder. The
+extension doesn't keep them or send them anywhere.
 
 ## Where it goes
 

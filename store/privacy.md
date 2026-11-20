@@ -17,6 +17,12 @@ INP Radar measures how responsive the page in the active tab is and shows it in 
 The extension's whole interface is a side panel. It sits next to the page it measures, and because it renders in its own process, it keeps animating while the page's main thread is blocked. That's what lets it show the block as it happens.
 ```
 
+**debugger**
+
+```text
+Used only while the user records, after clicking Record in the side panel. The extension attaches to the measured tab and to its own side panel and uses Chrome's built-in recorder: Page.startScreenRecording to start, Page.stopScreenRecording to stop, then IO.read and IO.close to read the finished video. It reads the video bytes only to save them, in a zip file, to the user's downloads folder; it doesn't analyze, keep or upload them. It sends no other debugger commands, doesn't read or change the page, and detaches when the recording stops or the panel closes.
+```
+
 **Host permission** (the content script matches `<all_urls>`)
 
 ```text
@@ -32,17 +38,20 @@ The content script measures responsiveness inside the page. It observes interact
 The store counts data that's only processed on the device as handled, so this
 is disclosed even though nothing leaves the browser.
 
-Tick **User activity** and nothing else. The content script observes
-interactions on the page: the event type (such as click or keydown), its timing
-and a CSS selector for the target element. It doesn't read which key was
-pressed, form values or page text.
+Tick **User activity** and **Website content**, and nothing else.
+
+- **User activity:** the content script observes interactions on the page: the
+  event type (such as click or keydown), its timing and a CSS selector for the
+  target element. It doesn't read which key was pressed, form values or page
+  text.
+- **Website content:** when the user clicks Record, the page is recorded to a
+  video. The extension reads the video only to save it, in a zip file, to the
+  user's downloads folder, and doesn't keep or upload it.
 
 Left unticked, with the reason:
 
 - **Web history:** the panel shows the current tab's URL, but the extension
   keeps no list of visited pages.
-- **Website content:** the target selector names an element (such as
-  `button#cheap`), not its text or media.
 - Everything else (personally identifiable, health, financial, authentication,
   personal communications, location): never touched.
 

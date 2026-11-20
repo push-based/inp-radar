@@ -1,3 +1,8 @@
+import { readFile } from 'node:fs/promises';
+
+import type { Locator, Page } from '@playwright/test';
+import { unzipSync } from 'fflate';
+
 import { expect, test } from './fixtures';
 import { SITE } from './test-page';
 
@@ -135,4 +140,126 @@ test('says when a page cannot be measured', async ({ page, openPanel }) => {
     timeout: 10_000,
   });
   await expect(panel.locator('#reload')).toBeVisible();
+});
+
+/** Waits for the one download Stop produces and returns its name and zip entries. */
+async function stopAndUnzip(panel: Page, record: Locator) {
+  const download = panel.waitForEvent('download');
+
+  await record.click();
+
+  const file = await download;
+  const entries = unzipSync(await readFile((await file.path()) ?? ''));
+
+  await expect(record).toHaveText('Record');
+
+  return { name: file.suggestedFilename(), entries };
+}
+
+test('records the tab and the panel into one zip', async ({ page, openPanel }) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await page.waitForTimeout(1000);
+
+  const { name, entries } = await stopAndUnzip(panel, record);
+
+  expect(name).toMatch(/^inp-radar-inp-radar\.test-[\dT-]+\.zip$/);
+  expect(Object.keys(entries)).toEqual(['page.mp4', 'panel.mp4']);
+
+  for (const video of Object.values(entries)) {
+    // An MP4 starts with an "ftyp" box.
+    expect(new TextDecoder().decode(video.subarray(4, 8))).toBe('ftyp');
+  }
+});
+
+test('closing the panel mid-recording stops it, so the next recording works', async ({
+  page,
+  openPanel,
+}) => {
+  await page.goto(`${SITE}/connect`);
+  const first = await openPanel(page);
+
+  await expect(first.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await first.locator('#record').click();
+  await expect(first.locator('#record')).toHaveAttribute('data-recording', 'true');
+  await first.close();
+
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  // The background script detached when the closed panel's port dropped, so
+  // the extension can attach to the tab again. (Chrome's own `attached` flag
+  // can't tell: Playwright keeps its own debugger attached to every page.)
+  await expect
+    .poll(() =>
+      panel.evaluate(`(async () => {
+        const target = (await chrome.debugger.getTargets()).find((t) => t.url.startsWith('${SITE}'));
+        try {
+          await chrome.debugger.attach({ tabId: target.tabId }, '1.3');
+          await chrome.debugger.detach({ tabId: target.tabId });
+          return 'free';
+        } catch (error) {
+          return error.message;
+        }
+      })()`),
+    )
+    .toBe('free');
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await page.waitForTimeout(500);
+
+  const { entries } = await stopAndUnzip(panel, record);
+
+  expect(Object.keys(entries)).toEqual(['page.mp4', 'panel.mp4']);
+  await expect(panel.locator('#record-message')).toBeHidden();
+});
+
+test('records the whole window into one zip', async ({ page, openPanel }) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await panel.locator('#record-mode').selectOption('window');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await expect(panel.locator('#record-mode')).toBeDisabled();
+  await page.waitForTimeout(1000);
+
+  const { name, entries } = await stopAndUnzip(panel, record);
+
+  expect(name).toMatch(/^inp-radar-inp-radar\.test-[\dT-]+\.zip$/);
+  expect(Object.keys(entries)).toEqual([expect.stringMatching(/^window\.(webm|mp4)$/)]);
+
+  await panel.reload();
+  await expect(panel.locator('#record-mode')).toHaveValue('window');
+});
+
+test('closing the recorded tab still saves the panel video', async ({ page, openPanel }) => {
+  await page.goto(`${SITE}/connect`);
+  const panel = await openPanel(page);
+  const record = panel.locator('#record');
+
+  await expect(panel.locator('#status')).toHaveAttribute('data-state', 'connected');
+  await record.click();
+  await expect(record).toHaveAttribute('data-recording', 'true');
+  await page.waitForTimeout(500);
+
+  const download = panel.waitForEvent('download');
+
+  await page.close();
+
+  const entries = unzipSync(await readFile((await (await download).path()) ?? ''));
+
+  expect(Object.keys(entries)).toEqual(['panel.mp4']);
+  await expect(panel.locator('#record-message')).toHaveText(
+    "The recorded tab was closed or can't be recorded any more, so only the panel video was saved.",
+  );
+  await expect(record).toHaveText('Record');
 });

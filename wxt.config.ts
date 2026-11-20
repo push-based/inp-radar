@@ -3,6 +3,8 @@ import { defineConfig } from 'wxt';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   srcDir: 'src',
+  // Builds land in dist/<browser>-mv<version>, e.g. dist/chrome-mv3.
+  outDir: 'dist',
   manifest: {
     name: 'INP Radar',
     description:
@@ -10,7 +12,9 @@ export default defineConfig({
     homepage_url: 'https://github.com/push-based/inp-radar',
     // chrome.sidePanel shipped in Chrome 114.
     minimum_chrome_version: '114',
-    permissions: ['sidePanel'],
+    // debugger: the Record button drives Chrome's native tab recorder
+    // (Page.startScreenRecording). Chrome doesn't allow it as optional.
+    permissions: ['sidePanel', 'debugger'],
     action: {
       default_title: 'Open INP Radar',
     },
