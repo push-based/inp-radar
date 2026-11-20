@@ -1,0 +1,84 @@
+<!doctype html>
+<!--
+  The Chrome Web Store's marquee promo tile, 1400×560, shown only if the store
+  features the extension. tools/store/capture.ts renders it to
+  store/marquee.png and fills in #panel with the side panel from the "blocked"
+  scene in dark mode.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>INP Radar marquee tile</title>
+    <style>
+      @font-face {
+        font-family: 'Geist Variable';
+        font-weight: 100 900;
+        src: url('../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2')
+          format('woff2-variations');
+      }
+
+      body {
+        position: relative;
+        margin: 0;
+        width: 1400px;
+        height: 560px;
+        overflow: hidden;
+        /* Bench Ink, with the Paper and Bezel Grey text from DESIGN.md. */
+        background: #121926;
+        color: #fcfcfd;
+        font-family: 'Geist Variable', sans-serif;
+      }
+
+      header {
+        position: absolute;
+        top: 50%;
+        left: 112px;
+        display: flex;
+        align-items: center;
+        gap: 44px;
+        transform: translateY(-50%);
+      }
+
+      header img {
+        width: 176px;
+        height: 176px;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 76px;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.01em;
+      }
+
+      p {
+        margin: 0;
+        color: #cdd5df;
+        font-size: 30px;
+        line-height: 1.3;
+      }
+
+      /* The panel runs off the bottom edge, like a window cut by the frame. */
+      #panel {
+        position: absolute;
+        top: 64px;
+        right: 112px;
+        display: block;
+        width: 400px;
+        border: 1px solid #364152;
+        border-radius: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="../../design/logo/mark.svg" alt="" />
+      <div>
+        <h1>INP Radar</h1>
+        <p>See when the main thread<br />is blocked, live.</p>
+      </div>
+    </header>
+    <img id="panel" alt="" />
+  </body>
+</html>

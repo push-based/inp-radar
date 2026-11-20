@@ -204,11 +204,16 @@ open the side panel.
 
 ### Publishing
 
-The **Publish** workflow submits a build to the Chrome Web Store. It only runs
-by hand: bump `version` in `package.json`, then go to **Actions → Publish → Run
-workflow**. Tick **dry-run** to check the credentials without uploading.
-**STAGED_PUBLISH** holds the version after review until you publish it from the
-developer dashboard.
+The **Publish** workflow submits a build to the Chrome Web Store. To release,
+bump `version` in `package.json` and merge it to `main`. The workflow runs on
+every push to `main`, but only submits when that version has no `v<version>`
+tag yet, and tags the commit once it's submitted. The store reviews it before
+it goes live.
+
+It can also be run by hand from **Actions → Publish → Run workflow**. Tick
+**dry-run** to check the credentials without uploading. **STAGED_PUBLISH**
+holds the version after review until you publish it from the developer
+dashboard.
 
 The store API can't create an item, so the first version is uploaded by hand in
 the [developer dashboard](https://chrome.google.com/webstore/devconsole), along
@@ -225,6 +230,9 @@ with the listing and privacy details. After that, the workflow needs a
 The service account needs the Chrome Web Store API enabled in its Google Cloud
 project, and its email added to the publisher in the dashboard's account
 settings.
+
+Tag the version that was uploaded by hand (`v0.1.0`), so the workflow doesn't
+submit it again.
 
 ## Limitations
 

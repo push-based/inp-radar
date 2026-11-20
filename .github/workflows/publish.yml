@@ -1,9 +1,15 @@
 name: Publish
 
-# Run by hand from the Actions tab. It builds the Chrome zip and submits it to
-# the Chrome Web Store for review. Bump "version" in package.json first: the
-# store rejects a version it already has.
+# Builds the Chrome zip and submits it to the Chrome Web Store for review.
+#
+# It runs on every push to main, but only submits when "version" in
+# package.json has no v<version> tag yet, so bumping the version is what
+# releases it. After a submission it tags the commit. It can also be run by
+# hand from the Actions tab, to check the credentials with a dry run or to
+# hold the version after review with STAGED_PUBLISH.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       dry-run:
@@ -27,9 +33,35 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: Check version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      released: ${{ steps.check.outputs.released }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: check
+        run: |
+          version=$(jq -r .version package.json)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "v$version is already tagged, nothing to submit."
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
   chrome:
     name: Chrome Web Store
+    needs: version
+    # A push only submits a new version. A manual run always submits, so it
+    # can do a dry run on a released version.
+    if: github.event_name == 'workflow_dispatch' || needs.version.outputs.released == 'false'
     runs-on: ubuntu-latest
+    # To push the release tag.
+    permissions:
+      contents: write
     # The credentials live in this environment, so it can also require approval.
     environment:
       name: chrome-web-store
@@ -53,10 +85,18 @@ jobs:
       - name: Submit
         run: pnpm wxt submit --chrome-zip dist/*-chrome.zip
         env:
-          DRY_RUN: ${{ inputs.dry-run }}
+          # A push has no inputs, and an empty value fails wxt's validation.
+          DRY_RUN: ${{ inputs.dry-run || false }}
           CHROME_API_VERSION: v2
-          CHROME_PUBLISH_TYPE: ${{ inputs.publish-type }}
+          CHROME_PUBLISH_TYPE: ${{ inputs.publish-type || 'DEFAULT_PUBLISH' }}
           CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
           CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
           CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ vars.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
           CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+      - name: Tag the release
+        if: ${{ !inputs.dry-run && needs.version.outputs.released == 'false' }}
+        run: |
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
